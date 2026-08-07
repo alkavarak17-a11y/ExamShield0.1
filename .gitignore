@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environment
+venv/
+env/
+
+# Environment variables
+.env
+
+# Flask uploads
+static/uploads/
+
+# Logs
+*.log
+
+# OTP debug file
+otp_bypass.txt
+
+# Database backup
+*.sql~

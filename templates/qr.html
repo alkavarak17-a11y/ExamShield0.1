@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EXAMSHIELD - SmartTrace QR Generator</title>
+
+
+    <!-- Import Font Awesome library for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+   
+    <!-- Import Poppins font from Google -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+   
+    <!-- Link to dashboard base CSS (reusing sidebar styles) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+   
+    <!-- Link to specific QR generator styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/qr.css') }}">
+</head>
+
+
+<body>
+
+
+    <!-- Responsive hamburger menu for mobile navigation -->
+    <button class="menu-toggle" id="mobile-menu-btn">
+        <i class="fa-solid fa-bars" id="menu-icon"></i>
+    </button>
+
+
+    <!-- Sidebar navigation layout -->
+    <div id="mysidenav" class="sidenav">
+        <h3>EXAMSHIELD</h3>
+        <a href="/dashboard">
+            <i class="fa-solid fa-chart-pie"></i> Dashboard
+        </a>
+        <a href="/create_exam">
+            <i class="fa-solid fa-file-pen"></i> Create Exam
+        </a>
+        <a href="/security_scan">
+            <i class="fa-solid fa-shield-halved"></i> Paper Security
+        </a>
+        <a href="/blockchain">
+            <i class="fa-solid fa-link"></i> Secure Chain
+        </a>
+        <a href="/tracking">
+            <i class="fa-solid fa-route"></i> Tracking
+        </a>
+        <a href="/reports">
+            <i class="fa-solid fa-chart-line"></i> Reports
+        </a>
+        <a href="/logout">
+            <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </a>
+    </div>
+
+
+    <!-- Header bar panel -->
+    <div class="section">
+        <h3>SmartTrace QR Label Generator</h3>
+        <div class="header-right">
+            <!-- Notification bell -->
+            <div class="top-icons">
+                <i class="fa-solid fa-bell notification"></i>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+       
+        <!-- Search and Selection Panel -->
+        <section class="search-card">
+            <form action="/qr" method="GET" class="search-form">
+                <label for="exam_code_select">SELECT EXAMINATION :</label>
+                <select name="exam_code" id="exam_code_select" onchange="this.form.submit()">
+                    <option value="">-- Choose created exam --</option>
+                    {% for ex in created_exams %}
+                        <option value="{{ ex.exam_code }}" {% if ex.exam_code == exam.exam_code %}selected{% endif %}>
+                            {{ ex.exam_code }} - {{ ex.exam_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </form>
+        </section>
+
+
+        {% if exam %}
+            <div class="qr-container">
+               
+                <!-- Glassmorphism QR Code Label Card -->
+                <div class="qr-card">
+                    <h2>
+                        <i class="fa-solid fa-qrcode"></i>
+                        Secure Containment Label
+                    </h2>
+
+
+                   
+                    <div class="verification-status-card">
+
+
+                    <div class="verify-icon">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+
+
+                    <div class="verify-text">
+                        <h3>Digital Certificate Verified</h3>
+                        <p>
+                            Security Engine ✓ &nbsp;&nbsp;
+                            Blockchain ✓ &nbsp;&nbsp;
+                            Tracking ✓
+                        </p>
+                    </div>
+
+
+                </div>
+
+
+                    <!-- Target container for the generated QR Code -->
+                    <div id="qrcode" class="qr-output-box">
+
+
+                        <div style="font-size: 12px; color: #64748b;">Rendering QR Label...</div>
+                    </div>
+                   
+                    <p class="scan-note">
+                    <i class="fa-solid fa-circle-info"></i>
+                    Scan this QR code to open the live SmartTrace tracking portal.
+                </p>
+                    <!-- Exam details metadata -->
+                    <table class="qr-details-table">
+                        <tr>
+                            <td class="label-name">EXAM CODE</td>
+                            <td class="value-data"><b>{{ exam.exam_code }}</b></td>
+                        </tr>
+                        <tr>
+                            <td class="label-name">AUTHORITY</td>
+                            <td class="value-data">{{ exam.authority }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label-name">SCHEDULE</td>
+                            <td class="value-data">{{ exam.exam_date }} @ {{ exam.exam_time }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label-name">EXAM DNA</td>
+                            <td class="value-data" style="font-family: monospace; font-size: 11px;">
+                                {{ paper_dna }}
+                            </td>
+                        </tr>
+                        <tr>
+                        <td class="label-name">GENERATED</td>
+                        <td class="value-data">
+                            {{ current_time }}
+                        </td>
+                    </tr>
+                    <tr>
+                    <td class="label-name">BLOCKCHAIN</td>
+                    <td class="value-data">
+                        VERIFIED ✓
+                    </td>
+                </tr>
+                <tr>
+                <td class="label-name">SECURITY SCORE</td>
+                <td class="value-data">
+                    {{ exam.security_score }}%
+                </td>
+            </tr>
+                    </table>
+
+
+                    <!-- Action buttons row -->
+                    <div class="qr-actions-row">
+                        <!-- Download PNG link (href populated base64 data url dynamically by script) -->
+                        <a id="download-qr-btn" class="qr-btn download-btn" download="EXAMSHIELD_{{ exam.exam_code }}_Digital_Certificate.png">
+                            <i class="fa-solid fa-download"></i> Download Label
+                        </a>
+                       
+                        <!-- Print trigger button -->
+                        <button id="print-qr-btn" type="button" class="qr-btn print-btn">
+                            <i class="fa-solid fa-print"></i> Print Label
+                        </button>
+                    </div>
+                    <!-- QR Scan Information -->
+                    <div class="qr-info-card">
+
+
+                        <h3>
+                            <i class="fa-solid fa-mobile-screen-button"></i>
+                            Scan Information
+                        </h3>
+
+
+                        <table class="qr-details-table">
+                            <tr>
+                                <td class="label-name">QR Version</td>
+                                <td class="value-data">Live Tracking Portal</td>
+                            </tr>
+
+
+                            <tr>
+                                <td class="label-name">Verification Type</td>
+                                <td class="value-data">Blockchain Enabled</td>
+                            </tr>
+
+
+                            <tr>
+                                <td class="label-name">Encryption</td>
+                                <td class="value-data">SHA-256 Protected</td>
+                            </tr>
+
+
+                            <tr>
+    <td class="label-name">STATUS</td>
+    <td class="value-data">
+
+
+        {% if exam.status == "Verified" %}
+            <span class="status-badge verified">
+                <i class="fa-solid fa-circle-check"></i>
+                Delivered
+            </span>
+
+
+        {% elif exam.status == "Arrived" %}
+            <span class="status-badge arrived">
+                <i class="fa-solid fa-location-dot"></i>
+                Arrived
+            </span>
+
+
+        {% else %}
+            <span class="status-badge transit">
+                <i class="fa-solid fa-truck"></i>
+                In Transit
+            </span>
+        {% endif %}
+
+
+    </td>
+</tr>
+                        </table>
+
+
+                    </div>
+
+
+                </div>
+
+
+            </div>
+        {% else %}
+            <!-- Warning display if no exam is selected -->
+            <div class="map-panel" style="margin-top: 20px; text-align: center; padding: 50px;">
+                <i class="fa-solid fa-circle-question" style="font-size: 48px; color: #3b82f6; margin-bottom: 20px;"></i>
+                <h2>No Examinations Created</h2>
+                <p style="color:#94a3b8; font-size:14px;">Please create an examination in the database to generate secure labels.</p>
+            </div>
+        {% endif %}
+
+
+    </div>
+
+
+    <!-- CDNs for qrcode.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+
+    {% if exam %}
+        <!-- Injects payload text for QR scan (resolves to the tracking route for the exam) -->
+        <script>
+            const EXAM_QR_PAYLOAD = window.location.origin + "/tracking?exam_code={{ exam.exam_code }}";
+        </script>
+    {% endif %}
+
+
+    <!-- Link to QR generator controller script -->
+     <input type="hidden" id="examCode" value="{{ exam.exam_code }}">
+<input type="hidden" id="examAuthority" value="{{ exam.authority }}">
+<input type="hidden" id="examStatus" value="{{ exam.status }}">
+    <script src="{{ url_for('static', filename='js/qr.js') }}"></script>
+
+
+    <div class="qr-footer">
+
+
+    This QR Label is digitally generated by
+    EXAMSHIELD Secure Examination Framework.
+
+
+    Any modification invalidates this certificate.
+
+
+</div>
+</body>
+
+
+</html>

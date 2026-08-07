@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EXAMSHIELD - SecureChain Blockchain Ledger</title>
+
+
+    <!-- Import Font Awesome library for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+   
+    <!-- Import Poppins font from Google -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+   
+    <!-- Link to dashboard base CSS (reusing sidebar styles) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+   
+    <!-- Link to specific blockchain ledger styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/blockchain.css') }}">
+</head>
+
+
+<body>
+
+
+    <!-- Responsive hamburger menu for mobile navigation -->
+    <button class="menu-toggle" id="mobile-menu-btn">
+        <i class="fa-solid fa-bars" id="menu-icon"></i>
+    </button>
+
+
+    <!-- Sidebar navigation layout -->
+    <div id="mysidenav" class="sidenav">
+        <h3>EXAMSHIELD</h3>
+        <a href="/dashboard">
+            <i class="fa-solid fa-chart-pie"></i> Dashboard
+        </a>
+        <a href="/create_exam">
+            <i class="fa-solid fa-file-pen"></i> Create Exam
+        </a>
+        <a href="/security_scan">
+            <i class="fa-solid fa-shield-halved"></i> Paper Security
+        </a>
+        <a href="/blockchain" class="active">
+            <i class="fa-solid fa-link"></i> Secure Chain
+        </a>
+        <a href="/tracking">
+            <i class="fa-solid fa-route"></i> Tracking
+        </a>
+        <a href="/reports">
+            <i class="fa-solid fa-chart-line"></i> Reports
+        </a>
+        <a href="/logout">
+            <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </a>
+    </div>
+
+
+    <!-- Header bar panel -->
+    <div class="section">
+        <h3>SecureChain Cryptographic Ledgers</h3>
+        <div class="header-right">
+            <!-- Notification bell -->
+            <div class="top-icons">
+                <i class="fa-solid fa-bell notification"></i>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+   
+        <!-- Blockchain Health Card -->
+        <div class="health-card">
+
+
+            <div class="health-left">
+                <h2>
+                    <i class="fa-solid fa-shield-halved"></i>
+                    SecureChain Status
+                </h2>
+
+
+                {% if chain_status == "Verified" %}
+                    <span class="status verified">
+                        <i class="fa-solid fa-circle-check"></i>
+                        Blockchain Verified
+                    </span>
+                {% else %}
+                    <span class="status tampered">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        Blockchain Tampered
+                    </span>
+
+
+                    <p class="tampered-info">
+                        Tampering detected at Block #{{ tampered_block }}
+                    </p>
+                {% endif %}
+
+
+            </div>
+
+
+            <div class="health-right">
+
+
+                <div class="health-item">
+                    <h3>{{ blockchain_logs|length }}</h3>
+                    <p>Total Blocks</p>
+                </div>
+
+
+                <div class="health-item">
+                    <h3>{{ exam.exam_code if exam else '-' }}</h3>
+                    <p>Exam Code</p>
+                </div>
+
+
+                </div>
+
+
+            </div>
+                   
+        <!-- Search and Selection Panel -->
+        <section class="search-card">
+            <form action="/blockchain" method="GET" class="search-form" style="display: flex; gap: 15px; align-items: center;">
+                <label for="exam_code_select" style="font-size: 13px; color: #94a3b8; font-weight: 600;">SELECT LEDGER TRACK :</label>
+                <select name="exam_code" id="exam_code_select" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1); background: #1e293b; color: white; font-size: 15px;" onchange="this.form.submit()">
+                    <option value="">-- Choose registered exam --</option>
+                    {% for ex in created_exams %}
+                        <option value="{{ ex.exam_code }}" {% if ex.exam_code == exam.exam_code %}selected{% endif %}>
+                            {{ ex.exam_code }} - {{ ex.exam_name }} ({{ ex.status }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </form>
+        </section>
+
+
+        {% if exam %}
+            <!-- Top Panel: Exam DNA Fingerprint display -->
+            <div class="dna-card">
+                <div class="dna-info">
+                    <h2>
+                        <i class="fa-solid fa-dna"></i>
+                        Question Paper cryptographic DNA
+                    </h2>
+                    <p>
+                        The Exam DNA is a unique SHA-256 fingerprint generated from the binary stream of the uploaded question paper document.
+                        Any alteration to the paper packet invalidates the DNA signature and locks the containment seals.
+                    </p>
+                    <div class="dna-hash-box">
+                        <span id="dna-hash-text">{{ paper_dna }}</span>
+                        <i id="copy-dna-icon" class="fa-solid fa-copy" title="Copy DNA Fingerprint"></i>
+                    </div>
+                </div>
+               
+                <div class="dna-graphic">
+                    <i class="fa-solid fa-dna"></i>
+                </div>
+            </div>
+
+
+            <!-- Bottom Panel: SecureChain Blockchain ledger sequence -->
+            <section class="ledger-section">
+                <h2>
+                    <i class="fa-solid fa-cubes-stacked"></i>
+                    SecureChain Ledger Blocks Explorer
+                </h2>
+
+
+                {% if blockchain_logs %}
+                    <!-- Horizontal Explorer Track -->
+                    <div class="ledger-track">
+                        {% for bl in blockchain_logs %}
+                            <!-- Block Card -->
+                            <div class="block-card" id="block-{{ bl.block_index }}">
+                                <div class="block-header">
+                                    <span class="index">BLOCK #{{ bl.block_index }}</span>
+                                    {% if bl.status == "Success" %}
+                                    <span class="status" style="color:#22c55e;">
+                                        <i class="fa-solid fa-circle-check"></i> VALID
+                                    </span>
+                                    {% else %}
+                                    <span class="status" style="color:#ef4444;">
+                                        <i class="fa-solid fa-circle-xmark"></i> INVALID
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <table class="block-details-table">
+                                    <tr>
+                                        <td class="label">Action</td>
+                                        <td class="value" style="color: #3b82f6; font-weight: 700;">{{ bl.action }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label">Timestamp</td>
+                                        <td class="value">{{ bl.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label">Operator</td>
+                                        <td class="value">{{ bl.operator }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label">Prev Hash</td>
+                                        <td class="value hash-font-sm" title="{{ bl.previous_hash }}">
+                                        {{ bl.previous_hash[:20] }}...
+                                        <i class="fa-regular fa-copy copy-hash"
+                                        data-hash="{{ bl.previous_hash }}"
+                                        title="Copy Hash"></i>
+                                    </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label">Block Hash</td>
+                                        <td class="value hash-font-sm" title="{{ bl.block_hash }}">
+                                        {{ bl.block_hash[:20] }}...
+                                        <i class="fa-regular fa-copy copy-hash"
+                                        data-hash="{{ bl.block_hash }}"
+                                        title="Copy Hash"></i>
+                                    </td>
+                                    </tr>
+                                </table>
+                            </div>
+
+
+                            <!-- Connecting arrows (omitted on last card index) -->
+                            {% if not loop.last %}
+                                <div class="block-connector">
+                                    <i class="fa-solid fa-circle-arrow-right"></i>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p style="color:#94a3b8; font-size:14px; text-align:center; padding:30px;">
+                        <i class="fa-solid fa-hourglass-empty" style="font-size:32px; color:#fbbf24; margin-bottom:15px; display:block;"></i>
+                        No SecureChain ledger entries registered for this examination record.
+                    </p>
+                {% endif %}
+
+
+                <!-- Chain Verification sweep actions card -->
+                <div class="integrity-control">
+                    <div class="integrity-info">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        <div class="text">
+                            <span class="title">SecureChain Ledger Link Check</span>
+                            <span class="desc">Traverses block links recursively to verify parents block hashes connection.</span>
+                        </div>
+                    </div>
+                    <button id="verify-chain-btn" type="button" class="verify-chain-btn" {% if not blockchain_logs %}disabled{% endif %}>
+                        Verify Chain Integrity
+                    </button>
+                </div>
+            </section>
+        {% else %}
+            <!-- Warning display if no created exams exist -->
+            <div class="ledger-section" style="text-align: center; padding: 50px;">
+                <i class="fa-solid fa-triangle-exclamation" style="font-size: 48px; color: #fbbf24; margin-bottom: 20px;"></i>
+                <h2>No Examinations Found</h2>
+                <p style="color:#94a3b8; font-size:14px;">Schedule examinations in the Scheduling Room to trace cryptographic SecureChain ledgers.</p>
+            </div>
+        {% endif %}
+
+
+    </div>
+
+
+    <!-- Link to blockchain controller scripts -->
+    <script src="{{ url_for('static', filename='js/blockchain.js') }}"></script>
+
+
+    {% if exam %}
+<a href="/export_blockchain/{{ exam.exam_code }}">
+    <button type="button">
+        <i class="fa-solid fa-download"></i>
+        Export Blockchain
+    </button>
+</a>
+{% endif %}
+
+
+
+
+<script>
+document.querySelectorAll(".copy-hash").forEach(icon => {
+
+
+    icon.addEventListener("click", function(){
+
+
+        navigator.clipboard.writeText(this.dataset.hash);
+
+
+        this.classList.remove("fa-copy");
+        this.classList.add("fa-check");
+
+
+        setTimeout(()=>{
+            this.classList.remove("fa-check");
+            this.classList.add("fa-copy");
+        },1000);
+
+
+    });
+
+
+});
+</script>
+</body>
+
+
+</html>

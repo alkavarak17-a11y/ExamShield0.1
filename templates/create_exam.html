@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EXAMSHIELD - Create Examination</title>
+
+
+    <!-- Import Font Awesome library for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+   
+    <!-- Import Poppins font from Google -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+   
+    <!-- Link to dashboard base CSS (reusing sidebar styles) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+   
+    <!-- Link to specific create exam styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/create_exam.css') }}">
+</head>
+
+
+<body>
+
+
+    <!-- Responsive hamburger menu for mobile navigation -->
+    <button class="menu-toggle" id="mobile-menu-btn">
+        <i class="fa-solid fa-bars" id="menu-icon"></i>
+    </button>
+
+
+    <!-- Sidebar navigation layout -->
+    <div id="mysidenav" class="sidenav">
+        <h3>EXAMSHIELD</h3>
+        <a href="/dashboard">
+            <i class="fa-solid fa-chart-pie"></i> Dashboard
+        </a>
+        <a href="/create_exam" class="active">
+            <i class="fa-solid fa-file-pen"></i> Create Exam
+        </a>
+        <a href="/security_scan">
+            <i class="fa-solid fa-shield-halved"></i> Paper Security
+        </a>
+        <a href="/blockchain">
+            <i class="fa-solid fa-link"></i> Secure Chain
+        </a>
+        <a href="/tracking">
+            <i class="fa-solid fa-route"></i> Tracking
+        </a>
+        <a href="/reports">
+            <i class="fa-solid fa-chart-line"></i> Reports
+        </a>
+        <a href="/logout">
+            <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </a>
+    </div>
+
+
+    <!-- Header bar panel -->
+    <div class="section">
+        <h3>Scheduling Control Room</h3>
+        <div class="header-right">
+            <!-- Notification bell -->
+            <div class="top-icons">
+                <i class="fa-solid fa-bell notification"></i>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+       
+        <!-- Page Title -->
+        <div class="page-title">
+            <h1>Create New Examination</h1>
+            <p>Schedule a secure examination and initialize its SecureChain tracking logs.</p>
+        </div>
+
+
+        <!-- Progress Steps Tracker -->
+        <div class="progress-wrapper">
+            <div class="step active">
+                <span>1</span>
+                <p>Exam Details</p>
+            </div>
+            <div class="line"></div>
+            <div class="step">
+                <span>2</span>
+                <p>Upload Paper</p>
+            </div>
+            <div class="line"></div>
+            <div class="step">
+                <span>3</span>
+                <p>AI Security</p>
+            </div>
+            <div class="line"></div>
+            <div class="step">
+                <span>4</span>
+                <p>DNA & Chain</p>
+            </div>
+            <div class="line"></div>
+            <div class="step">
+                <span>5</span>
+                <p>Dispatch</p>
+            </div>
+        </div>
+
+
+        <!-- Flash alerts for validation feedback -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, msg in messages %}
+                        <div class="alert-box {{ category }}">{{ msg }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+
+        <!-- Form Card Container -->
+        <section class="form-card">
+           
+            <form action="{{ url_for('create_exam') }}" method="POST">
+                <h2>
+                    <i class="fa-solid fa-file-circle-plus"></i>
+                    Examination Information
+                </h2>
+
+
+                <div class="form-grid">
+                    <!-- Exam Name -->
+                    <div class="form-group">
+                        <label for="exam_name">EXAMINATION NAME</label>
+                        <input type="text" id="exam_name" name="exam_name" placeholder="e.g. UPSC CSE Prelims 2026" required>
+                    </div>
+
+
+                    <!-- Conducting Authority -->
+                    <div class="form-group">
+                        <label for="authority">CONDUCTING AUTHORITY</label>
+                        <input type="text" id="authority" name="authority" placeholder="e.g. UPSC" required>
+                    </div>
+
+
+                    <!-- Suggested Exam Code (Readonly) -->
+                    <div class="form-group">
+                        <label for="exam_code">EXAM CODE (AUTO-GENERATED)</label>
+                        <input type="text" id="exam_code" name="exam_code" value="{{ suggested_code }}" readonly>
+                    </div>
+
+
+                    <!-- Total Questions -->
+                    <div class="form-group">
+                        <label for="total_questions">TOTAL QUESTIONS</label>
+                        <input type="number" id="total_questions" name="total_questions" max="100" min="1" required>
+                    </div>
+
+
+                    <!-- Date -->
+                    <div class="form-group">
+                        <label for="exam_date">EXAM DATE</label>
+                        <input type="date" id="exam_date" name="exam_date" required>
+                    </div>
+
+
+                    <!-- Time -->
+                    <div class="form-group">
+                        <label for="exam_time">START TIME</label>
+                        <input type="time" id="exam_time" name="exam_time" required>
+                    </div>
+
+
+                    <!-- Exam Type -->
+                    <div class="form-group">
+                        <label for="exam_type">EXAMINATION CATEGORY</label>
+                        <select id="exam_type" name="exam_type" required>
+                            <option value="">-- Select category --</option>
+                            <option value="Competitive">Competitive Entrance</option>
+                            <option value="Recruitment">Government Recruitment</option>
+                            <option value="University">University Semester</option>
+                            <option value="Board">Secondary Board</option>
+                        </select>
+                    </div>
+
+
+                    <!-- State / UT -->
+                    <div class="form-group">
+                        <label for="state_ut">STATE / UNION TERRITORY</label>
+                        <select id="state_ut" name="state_ut" required>
+                            <option value="">-- Select region --</option>
+                            <option value="Delhi">Delhi</option>
+                            <option value="Maharashtra">Maharashtra</option>
+                            <option value="Gujarat">Gujarat</option>
+                            <option value="Karnataka">Karnataka</option>
+                            <option value="Tamil Nadu">Tamil Nadu</option>
+                            <option value="Uttar Pradesh">Uttar Pradesh</option>
+                            <option value="West Bengal">West Bengal</option>
+                        </select>
+                    </div>
+                </div>
+
+
+
+
+                <!-- Security Configuration -->
+                <div class="security-card">
+                    <h2>
+                        <i class="fa-solid fa-shield-halved"></i>
+                        Security Protections Configuration
+                    </h2>
+                   
+                    <div class="security-options">
+                        <label class="checkbox-card">
+                            <input type="checkbox" id="sec_aes" name="security_aes" value="1" checked>
+                            <span>AES-256 Encryption</span>
+                        </label>
+
+
+                        <label class="checkbox-card">
+                            <input type="checkbox" id="sec_ai" name="security_ai" value="1" checked>
+                            <span>AI Threat Scanning</span>
+                        </label>
+
+
+                        <label class="checkbox-card">
+                            <input type="checkbox" id="sec_blockchain" name="security_blockchain" value="1" checked>
+                            <span>SecureChain Blockchain</span>
+                        </label>
+
+
+                        <label class="checkbox-card">
+                            <input type="checkbox" id="sec_qr" name="security_qr" value="1" checked>
+                            <span>SmartTrace QR Codes</span>
+                        </label>
+
+
+                       
+
+
+                       
+                    </div>
+                </div>
+
+
+                <!-- Additional Settings -->
+                <div class="additional-card">
+                    <h2>
+                        <i class="fa-solid fa-sliders"></i>
+                        Additional Parameters
+                    </h2>
+
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="total_marks">TOTAL MARKS</label>
+                            <input type="number" id="total_marks" name="total_marks" value="100" min="1" required>
+                        </div>
+
+
+                        <div class="form-group">
+                            <label for="passing_marks">PASSING MARKS</label>
+                            <input type="number" id="passing_marks" name="passing_marks" value="35" min="1" required>
+                        </div>
+
+
+                        <div class="form-group">
+                            <label for="negative_marking">NEGATIVE MARKING</label>
+                            <select id="negative_marking" name="negative_marking" required>
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                        </div>
+
+
+                        <div class="form-group">
+                            <label for="duration">DURATION (MINUTES)</label>
+                            <input type="number" id="duration" name="duration" value="180" min="1" required>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Security readiness Checklist -->
+                <div class="status-card">
+                    <h2>
+                        <i class="fa-solid fa-square-check"></i>
+                        Live Protocol Readiness
+                    </h2>
+                   
+                    <div class="status-list">
+                        <div id="status_aes" class="status-item">
+                            <i class="fa-solid fa-circle-check"></i> Encryption Active
+                        </div>
+                        <div id="status_ai" class="status-item">
+                            <i class="fa-solid fa-circle-check"></i> AI Scan Configured
+                        </div>
+                        <div id="status_blockchain" class="status-item">
+                            <i class="fa-solid fa-circle-check"></i> SecureChain Pre-Armed
+                        </div>
+                        <div id="status_qr" class="status-item">
+                            <i class="fa-solid fa-circle-check"></i> SmartTrace QR Pre-Armed
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Submit buttons -->
+                <div class="button-group">
+                    <button type="button" class="cancel-btn" onclick="location.href='/dashboard'">
+                        Cancel
+                    </button>
+                   
+                    <button type="submit" name="action" value="draft" class="draft-btn">
+                        Save Draft
+                    </button>
+                   
+                    <button type="submit" name="action" value="continue" class="continue-btn">
+                        Generate & Continue <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+
+
+            </form>
+        </section>
+
+
+    </div>
+
+
+    <!-- Link to dynamic creation scripts -->
+    <script src="{{ url_for('static', filename='js/create_exam.js') }}"></script>
+</body>
+
+
+</html>

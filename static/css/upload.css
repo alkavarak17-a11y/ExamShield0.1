@@ -1,0 +1,339 @@
+/* ==========================================
+   EXAMSHIELD - UPLOAD QUESTION PAPER STYLES
+   ========================================== */
+
+
+/* Main layout wrapper */
+.upload-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 30px;
+    width: 100%;
+}
+
+
+/* Glassmorphism Upload Card */
+.upload-form-card {
+    width: 550px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    padding: 35px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35);
+}
+
+
+.upload-form-card h2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 25px;
+    color: #3b82f6;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 15px;
+}
+
+
+/* Form selection header */
+.exam-select-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 25px;
+}
+
+
+.exam-select-group label {
+    font-size: 12px;
+    color: #94a3b8;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+
+.exam-select-dropdown {
+    padding: 12px 15px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #1e293b;
+    color: white;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.3s;
+}
+
+
+.exam-select-dropdown:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+}
+
+
+/* Drag & Drop Dropzone Box */
+.dropzone {
+    width: 100%;
+    border: 2px dashed rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    padding: 40px 20px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.01);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 25px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+
+.dropzone:hover,
+.dropzone.dragover {
+    border-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.05);
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.1);
+}
+
+
+.dropzone i {
+    font-size: 48px;
+    color: #64748b;
+    transition: all 0.3s;
+}
+
+
+.dropzone:hover i,
+.dropzone.dragover i {
+    color: #3b82f6;
+    transform: translateY(-3px);
+}
+
+
+.dropzone h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #cbd5e1;
+}
+
+
+.dropzone p {
+    font-size: 12px;
+    color: #475569;
+}
+
+
+/* File detail status card */
+.file-info-card {
+    display: none; /* activated via JS */
+    background: rgba(59, 130, 246, 0.05);
+    border: 1px solid rgba(59, 130, 246, 0.15);
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 25px;
+    align-items: center;
+    gap: 15px;
+    text-align: left;
+}
+
+
+.file-info-card i {
+    font-size: 28px;
+    color: #3b82f6;
+}
+
+
+.file-info-card .details {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+
+.file-info-card .name {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #f8fafc;
+    word-break: break-all;
+}
+
+
+.file-info-card .size {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 2px;
+}
+
+
+.file-info-card .remove-btn {
+    background: transparent;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 5px;
+    transition: transform 0.2s;
+}
+
+
+.file-info-card .remove-btn:hover {
+    transform: scale(1.1);
+}
+
+
+/* Form Actions Button row */
+.upload-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+}
+
+
+.upload-buttons button {
+    padding: 13px 26px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+
+.upload-btn-cancel {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #cbd5e1;
+}
+
+
+.upload-btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+}
+
+
+.upload-btn-submit {
+    background: #2563eb;
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+
+.upload-btn-submit:hover {
+    background: #1d4ed8;
+    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+}
+
+
+.upload-btn-submit:disabled {
+    background: #1e293b;
+    color: #64748b;
+    border-color: rgba(255, 255, 255, 0.05);
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+
+/* ==========================================
+   Upload Progress Stepper
+========================================== */
+
+
+.progress-wrapper{
+    margin-bottom:30px;
+}
+
+
+.progress-wrapper .step{
+    transition:0.3s;
+}
+
+
+.progress-wrapper .step:hover{
+    transform:translateY(-3px);
+}
+
+
+.progress-wrapper .step span{
+    transition:0.3s;
+}
+
+
+.progress-wrapper .step.active span{
+    animation:pulseStep 2s infinite;
+}
+
+
+@keyframes pulseStep{
+    0%{
+        box-shadow:0 0 0 rgba(59,130,246,.4);
+    }
+    50%{
+        box-shadow:0 0 18px rgba(59,130,246,.8);
+    }
+    100%{
+        box-shadow:0 0 0 rgba(59,130,246,.4);
+    }
+}
+
+
+/* ==========================================
+   Flash Messages
+========================================== */
+
+
+.flash-messages{
+    margin-bottom:20px;
+}
+
+
+.alert-box{
+    padding:14px 18px;
+    border-radius:10px;
+    margin-bottom:12px;
+    font-size:14px;
+    font-weight:600;
+}
+
+
+.alert-box.success{
+    background:rgba(34,197,94,.12);
+    color:#22c55e;
+    border:1px solid rgba(34,197,94,.3);
+}
+
+
+.alert-box.error{
+    background:rgba(239,68,68,.12);
+    color:#ef4444;
+    border:1px solid rgba(239,68,68,.3);
+}
+
+
+/* ==========================================
+   Upload Card Animation
+========================================== */
+
+
+.upload-form-card{
+    animation:fadeCard .6s ease;
+}
+
+
+@keyframes fadeCard{
+    from{
+        opacity:0;
+        transform:translateY(20px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EXAMSHIELD - Secure Upload Paper</title>
+
+
+    <!-- Import Font Awesome library for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+   
+    <!-- Import Poppins font from Google -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+   
+    <!-- Link to dashboard base CSS (reusing sidebar styles) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+   
+    <!-- Link to specific upload paper styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/upload.css') }}">
+</head>
+
+
+<body>
+
+
+    <!-- Responsive hamburger menu for mobile navigation -->
+    <button class="menu-toggle" id="mobile-menu-btn">
+        <i class="fa-solid fa-bars" id="menu-icon"></i>
+    </button>
+
+
+    <!-- Sidebar navigation layout -->
+    <div id="mysidenav" class="sidenav">
+        <h3>EXAMSHIELD</h3>
+        <a href="/dashboard">
+            <i class="fa-solid fa-chart-pie"></i> Dashboard
+        </a>
+        <a href="/create_exam">
+            <i class="fa-solid fa-file-pen"></i> Create Exam
+        </a>
+        <a href="/security_scan">
+            <i class="fa-solid fa-shield-halved"></i> Paper Security
+        </a>
+        <a href="/blockchain">
+            <i class="fa-solid fa-link"></i> Secure Chain
+        </a>
+        <a href="/tracking">
+            <i class="fa-solid fa-route"></i> Tracking
+        </a>
+        <a href="/reports">
+            <i class="fa-solid fa-chart-line"></i> Reports
+        </a>
+        <a href="/logout">
+            <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </a>
+    </div>
+
+
+    <!-- Header bar panel -->
+    <div class="section">
+        <h3>Document Management Vault</h3>
+        <div class="header-right">
+            <!-- Notification bell -->
+            <div class="top-icons">
+                <i class="fa-solid fa-bell notification"></i>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+       
+        <!-- Progress Steps Tracker -->
+        <div class="progress-wrapper" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; background: rgba(255, 255, 255, 0.03); padding: 20px; border-radius: 15px; border: 1px solid rgba(255, 255, 255, 0.05); font-family: 'Poppins', sans-serif;">
+            <div class="step" style="display: flex; flex-direction: column; align-items: center; flex: 1; text-align: center;">
+                <span style="width: 40px; height: 40px; border-radius: 50%; background: #10b981; border: 2px solid #10b981; display: flex; justify-content: center; align-items: center; font-weight: 700; color: white;"><i class="fa-solid fa-check"></i></span>
+                <p style="margin-top: 8px; font-size: 12px; color: #10b981; font-weight: 500;">Exam Details</p>
+            </div>
+            <div class="line" style="height: 2px; background: #10b981; flex: 1; margin: 0 15px;"></div>
+            <div class="step active" style="display: flex; flex-direction: column; align-items: center; flex: 1; text-align: center;">
+                <span style="width: 40px; height: 40px; border-radius: 50%; background: #2563eb; border: 2px solid #3b82f6; display: flex; justify-content: center; align-items: center; font-weight: 700; color: white; box-shadow: 0 0 12px rgba(59, 130, 246, 0.5);">2</span>
+                <p style="margin-top: 8px; font-size: 12px; color: #3b82f6; font-weight: 600;">Upload Paper</p>
+            </div>
+            <div class="line" style="height: 2px; background: #1e293b; flex: 1; margin: 0 15px;"></div>
+            <div class="step" style="display: flex; flex-direction: column; align-items: center; flex: 1; text-align: center;">
+                <span style="width: 40px; height: 40px; border-radius: 50%; background: #1e293b; border: 2px solid #334155; display: flex; justify-content: center; align-items: center; font-weight: 700; color: #94a3b8;">3</span>
+                <p style="margin-top: 8px; font-size: 12px; color: #64748b; font-weight: 500;">AI Security</p>
+            </div>
+            <div class="line" style="height: 2px; background: #1e293b; flex: 1; margin: 0 15px;"></div>
+            <div class="step" style="display: flex; flex-direction: column; align-items: center; flex: 1; text-align: center;">
+                <span style="width: 40px; height: 40px; border-radius: 50%; background: #1e293b; border: 2px solid #334155; display: flex; justify-content: center; align-items: center; font-weight: 700; color: #94a3b8;">4</span>
+                <p style="margin-top: 8px; font-size: 12px; color: #64748b; font-weight: 500;">DNA & Chain</p>
+            </div>
+            <div class="line" style="height: 2px; background: #1e293b; flex: 1; margin: 0 15px;"></div>
+            <div class="step" style="display: flex; flex-direction: column; align-items: center; flex: 1; text-align: center;">
+                <span style="width: 40px; height: 40px; border-radius: 50%; background: #1e293b; border: 2px solid #334155; display: flex; justify-content: center; align-items: center; font-weight: 700; color: #94a3b8;">5</span>
+                <p style="margin-top: 8px; font-size: 12px; color: #64748b; font-weight: 500;">Dispatch</p>
+            </div>
+        </div>
+
+
+        <!-- Flash messages for validation errors -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, msg in messages %}
+                        <div class="alert-box {{ category }}">{{ msg }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+
+        <!-- Upload Panel wrapper -->
+        <div class="upload-container">
+            <div class="upload-form-card">
+                <h2>
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    Upload Question Paper Packet
+                </h2>
+
+
+                <form action="/upload" method="POST" enctype="multipart/form-data">
+                   
+                    <!-- Exam Selection Dropdown -->
+                    <div class="exam-select-group">
+                        <label for="exam_code">SELECT REGISTERED EXAMINATION :</label>
+                        <select name="exam_code" id="exam_code" class="exam-select-dropdown" required>
+                            <option value="">-- Choose exam --</option>
+                            {% for ex in created_exams %}
+                                <option value="{{ ex.exam_code }}" {% if ex.exam_code == selected_code %}selected{% endif %}>
+                                    {{ ex.exam_code }} - {{ ex.exam_name }} ({{ ex.status }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+
+                    <!-- Drag & Drop Dropzone Box -->
+                    <div id="dropzone" class="dropzone">
+                        <i class="fa-solid fa-file-pdf"></i>
+                        <h3>Drag & Drop Question Paper Here</h3>
+                        <p>Supported file formats: PDF, DOCX, TXT, PNG, JPG (Max: 15MB)</p>
+                        <p style="text-decoration: underline; color: #3b82f6; font-size: 11px;">or click to browse local folders</p>
+                       
+                        <!-- Hidden raw file input element -->
+                        <input type="file" id="file-input" name="file" style="display: none;" accept=".pdf,.docx,.txt,.png,.jpg,.jpeg">
+                    </div>
+
+
+                    <!-- Selected File Metadata Card -->
+                    <div id="file-info-card" class="file-info-card">
+                        <i class="fa-solid fa-file-circle-check"></i>
+                        <div class="details">
+                            <span id="file-name" class="name">examination_paper.pdf</span>
+                            <span id="file-size" class="size">2.4 MB</span>
+                        </div>
+                        <button type="button" id="remove-file-btn" class="remove-btn" title="Remove file">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                        </button>
+                    </div>
+
+
+                    <!-- Upload Progress -->
+                    <div id="upload-progress-container" style="display:none; margin-top:20px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                            <span>Uploading Secure Package...</span>
+                            <span id="upload-percent">0%</span>
+                        </div>
+
+
+                        <div style="
+                            width:100%;
+                            height:12px;
+                            background:#1e293b;
+                            border-radius:8px;
+                            overflow:hidden;
+                        ">
+                            <div
+                                id="upload-progress-bar"
+                                style="
+                                    width:0%;
+                                    height:100%;
+                                    background:linear-gradient(90deg,#2563eb,#10b981);
+                                    transition:width .3s;
+                                ">
+                            </div>
+                        </div>
+                    </div>
+                   
+                    <!-- Upload Status -->
+                    <div id="upload-status"
+                        style="
+                            display:none;
+                            margin-top:15px;
+                            text-align:center;
+                            color:#94a3b8;
+                            font-size:14px;
+                            font-weight:500;
+                    ">
+                        Waiting...
+                    </div>
+
+
+                    <!-- Security Verification Checklist -->
+                    <div id="security-checklist"
+                        style="
+                            display:none;
+                            margin-top:25px;
+                            padding:20px;
+                            border-radius:12px;
+                            background:rgba(255,255,255,0.03);
+                            border:1px solid rgba(255,255,255,0.08);
+                    ">
+
+
+                        <h3 style="margin-bottom:15px;color:#10b981;">
+                            <i class="fa-solid fa-shield-virus"></i>
+                            Security Verification
+                        </h3>
+
+
+                        <p id="check-file">
+                            ⏳ File Integrity Check
+                        </p>
+
+
+                        <p id="check-virus">
+                            ⏳ Malware Scan
+                        </p>
+
+
+                        <p id="check-encryption">
+                            ⏳ AES-256 Encryption
+                        </p>
+
+
+                        <p id="check-hash">
+                            ⏳ SHA-256 Fingerprint Generation
+                        </p>
+
+
+                        <p id="check-blockchain">
+                            ⏳ Blockchain Registration
+                        </p>
+
+
+                    </div>
+                    <!-- Submit action row -->
+                    <div class="upload-buttons">
+                        <button type="button" class="upload-btn-cancel" onclick="location.href='/dashboard'">
+                            Cancel
+                        </button>
+                       
+                        <button type="submit"
+                        id="submit-btn"
+                        class="upload-btn-submit"
+                        disabled>
+
+
+                    <span id="submit-text">
+                        Securely Upload Paper
+                    </span>
+
+
+                    <i class="fa-solid fa-shield" id="submit-icon"></i>
+
+
+                </button>
+                    </div>
+
+
+                </form>
+            </div>
+        </div>
+
+
+    </div>
+
+
+    <!-- Link to upload JS scripts -->
+    <script src="{{ url_for('static', filename='js/upload.js') }}"></script>
+</body>
+
+
+</html>
+
+

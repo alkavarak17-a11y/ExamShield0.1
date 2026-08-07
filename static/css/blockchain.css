@@ -1,0 +1,406 @@
+
+
+/* ==========================================
+   EXAMSHIELD - SECURECHAIN & DNA STYLES
+   ========================================== */
+
+
+/* DNA card styles */
+.dna-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    padding: 25px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 30px;
+}
+
+
+.dna-info {
+    flex: 1;
+}
+
+
+.dna-info h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #3b82f6;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+
+.dna-info p {
+    font-size: 13px;
+    color: #94a3b8;
+    line-height: 1.5;
+    margin-bottom: 15px;
+}
+
+
+.dna-hash-box {
+    background: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 15px 20px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 15px;
+    font-weight: bold;
+    color: #3b82f6;
+    word-break: break-all;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+
+.dna-hash-box i {
+    font-size: 20px;
+    color: #10b981;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+
+.dna-hash-box i:hover {
+    transform: scale(1.1);
+}
+
+
+.dna-graphic {
+    width: 100px;
+    height: 100px;
+    border: 3px dashed rgba(59, 130, 246, 0.2);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 42px;
+    color: #3b82f6;
+    animation: rotateHelix 10s infinite linear;
+}
+
+
+/* ================= BLOCKCHAIN TRACK EXPLORER ================= */
+.ledger-section {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 18px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    margin-bottom: 30px;
+}
+
+
+.ledger-section h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #f8fafc;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+
+/* Horizontal scroll track for block sequence flow */
+.ledger-track {
+    display: flex;
+    align-items: stretch;
+    gap: 20px;
+    overflow-x: auto;
+    padding: 20px 10px;
+    margin-bottom: 20px;
+    scroll-behavior: smooth;
+}
+
+
+/* Block Card styling */
+.block-card {
+    min-width: 320px;
+    max-width: 320px;
+    background: #0f172a;
+    border: 1.5px solid rgba(255, 255, 255, 0.08);
+    border-radius: 15px;
+    padding: 22px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+
+.block-card:hover {
+    transform: translateY(-3px);
+}
+
+
+/* Block verification statuses */
+.block-card.valid-sequence {
+    border-color: #10b981;
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+}
+
+
+.block-card.valid-sequence::before {
+    content: '\f058';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    color: #10b981;
+    font-size: 18px;
+}
+
+
+.block-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 10px;
+}
+
+
+.block-header .index {
+    font-size: 14px;
+    font-weight: 700;
+    color: #3b82f6;
+}
+
+
+.block-header .status {
+    font-size: 10px;
+    background: #1e293b;
+    color: #94a3b8;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+
+.block-card.valid-sequence .block-header .status {
+    background: #064e3b;
+    color: #34d399;
+}
+
+
+.block-details-table {
+    width: 100%;
+    font-size: 12px;
+    border-collapse: collapse;
+}
+
+
+.block-details-table td {
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+
+.block-details-table tr:last-child td {
+    border-bottom: none;
+}
+
+
+.block-details-table td.label {
+    color: #64748b;
+    font-weight: 600;
+    width: 35%;
+}
+
+
+.block-details-table td.value {
+    color: #cbd5e1;
+    font-weight: 500;
+    word-break: break-all;
+    font-family: monospace;
+}
+
+
+/* Hash fonts */
+.hash-font-sm {
+    font-size: 11px;
+    color: #93c5fd !important;
+}
+
+
+/* Arrow Connector lines in between cards */
+.block-connector {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-width: 40px;
+    color: #334155;
+    font-size: 20px;
+}
+
+
+.block-connector.verified {
+    color: #10b981;
+    animation: pulseConnector 1.5s infinite ease-in-out;
+}
+
+
+/* Chain integrity verification trigger block */
+.integrity-control {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 20px 25px;
+    margin-top: 25px;
+}
+
+
+.integrity-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+
+.integrity-info i {
+    font-size: 28px;
+    color: #3b82f6;
+}
+
+
+.integrity-info .text {
+    display: flex;
+    flex-direction: column;
+}
+
+
+.integrity-info .title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #f8fafc;
+}
+
+
+.integrity-info .desc {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+
+.verify-chain-btn {
+    padding: 12px 24px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+
+.verify-chain-btn:hover {
+    background: #1d4ed8;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+
+/* Keyframe animations */
+@keyframes rotateHelix {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+
+@keyframes pulseConnector {
+    0% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(1); opacity: 0.5; }
+}
+
+
+/* Scrollbar styles for horizontal tracks */
+.ledger-track::-webkit-scrollbar {
+    height: 8px;
+}
+.ledger-track::-webkit-scrollbar-track {
+    background: #0f172a;
+    border-radius: 4px;
+}
+.ledger-track::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.ledger-track::-webkit-scrollbar-thumb:hover {
+    background: #334155;
+}
+
+
+/* Responsive grid adjustments */
+@media(max-width: 768px) {
+    .dna-card {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+    }
+    .dna-graphic {
+        margin: 0 auto;
+    }
+    .integrity-control {
+        flex-direction: column;
+        gap: 20px;
+        align-items: stretch;
+    }
+    .verify-chain-btn {
+        width: 100%;
+    }
+}
+/* Verification Animation */
+
+
+.block-card.valid-sequence{
+    animation: verifyPulse .6s ease;
+}
+
+
+@keyframes verifyPulse{
+
+
+    0%{
+        transform:scale(.95);
+        box-shadow:0 0 0 rgba(16,185,129,0);
+    }
+
+
+    50%{
+        transform:scale(1.03);
+        box-shadow:0 0 25px rgba(16,185,129,.5);
+    }
+
+
+    100%{
+        transform:scale(1);
+    }
+
+
+}
+

@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EXAMSHIELD - National Control Dashboard</title>
+
+
+    <!-- Import Font Awesome library for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+
+    <!-- Import Leaflet.js map styles -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+
+
+    <!-- Import dynamic Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+
+    <!-- Link to external modular dashboard stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+
+
+    <!-- Import Chart.js library for bar graph -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+
+<body>
+
+
+    <!-- Hamburger menu button for responsive mobile layouts -->
+    <button class="menu-toggle" id="mobile-menu-btn">
+        <i class="fa-solid fa-bars" id="menu-icon"></i>
+    </button>
+
+
+    <!-- Sidebar container -->
+    <div id="mysidenav" class="sidenav">
+        <h3>EXAMSHIELD</h3>
+
+
+        <!-- Sidebar menu links connected to Flask endpoints -->
+        <a href="/dashboard" class="active">
+            <i class="fa-solid fa-chart-pie"></i> Dashboard
+        </a>
+        <a href="/create_exam">
+            <i class="fa-solid fa-file-pen"></i> Create Exam
+        </a>
+        <a href="/security_scan">
+            <i class="fa-solid fa-shield-halved"></i> Paper Security
+        </a>
+        <a href="/blockchain">
+            <i class="fa-solid fa-link"></i> Secure Chain
+        </a>
+        <a href="/tracking">
+            <i class="fa-solid fa-route"></i> Tracking
+        </a>
+        <a href="/reports">
+            <i class="fa-solid fa-chart-line"></i> Reports
+        </a>
+        <a href="/logout">
+            <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </a>
+    </div>
+
+
+    <!-- National Dashboard header, search and notification elements -->
+    <div class="section">
+        <h3>National Security Control Dashboard</h3>
+        <div class="header-right">
+            <!-- Search bar -->
+         <form action="{{ url_for('search') }}" method="GET">
+        <input
+            type="search"
+            id="site-search"
+            name="q"
+            placeholder="Search Exam Code or Exam Name..."
+            required
+        >
+
+
+    <button type="submit">
+        <i class="fa-solid fa-search"></i>
+    </button>
+</form>
+
+
+            <!-- Notifications badge -->
+        <div class="notification-container">
+
+
+            <i class="fa-solid fa-bell notification"
+            onclick="loadNotifications()">
+            </i>
+
+
+            <span id="notification-count"  class="notification-count">0</span>
+
+
+
+
+            <div id="notification-box">
+
+
+                <div class="notification-header">
+                    🔔 Notifications
+            </div>
+
+
+</div>
+
+
+    </div>
+
+
+</div>
+        </div>
+    </div>
+
+
+    <!-- Main page content panel -->
+    <div class="main-content">
+
+
+        <!-- Statistics cards grid container -->
+        <div class="cards-container">
+            <!-- 1. Exams Counter Card -->
+            <div>
+                <i class="fa-solid fa-file-lines"></i>
+                <p>TOTAL EXAMINATIONS</p>
+                <p>{{ total_exams }}</p>
+                <p>{{ in_progress_exams }} dispatch chain active</p>
+            </div>
+
+
+            <!-- 2. Active Centers Counter Card -->
+            <div>
+                <i class="fa-solid fa-map-location-dot"></i>
+                <p>ACTIVE CENTERS</p>
+                <p>{{ total_centers }}</p>
+                <p>{{ online_percent }}% online response rate</p>
+            </div>
+
+
+            <!-- 3. System Integrity Score Card -->
+            <div>
+                <i class="fa-solid fa-shield-halved"></i>
+                <p>SYSTEM INTEGRITY SCORE</p>
+                <p>{{ avg_integrity_score }}%</p>
+                <p>+0.8% average vs threshold</p>
+            </div>
+
+
+            <!-- 4. Active Alerts Counter Card -->
+            <div>
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <p>LIVE ALERTS</p>
+                <p class="{% if total_alerts > 0 %}critical-alert{% endif %}">{{ total_alerts }}</p>
+                <p>{{ critical_alerts }} critical anomaly flags</p>
+            </div>
+        </div>
+
+
+        <!-- System Integrity Interactive Leaflet Map -->
+        <div class="integrity-map">
+            <h2>
+                <i class="fa-solid fa-map"></i>
+                Geographical Node Integrity Map
+            </h2>
+            <div id="map"></div>
+        </div>
+
+
+        <!-- Dynamic Blockchain Log Activity timeline -->
+        <div class="live-activity">
+            <h2>
+                <i class="fa-solid fa-list-check"></i>
+                Live SecureChain Audit Timeline
+            </h2>
+            <div class="activity-list">
+                {% for log in recent_activities %}
+                <div class="activity-item">
+                    {% if log.action == 'Paper Created' %}
+                    <i class="fa-solid fa-file-circle-plus" style="color: #60A5FA;"></i>
+                    {% elif log.action == 'Hash Generated' %}
+                    <i class="fa-solid fa-dna" style="color: #A78BFA;"></i>
+                    {% elif log.action == 'AES Encrypted' %}
+                    <i class="fa-solid fa-lock" style="color: #34D399;"></i>
+                    {% elif log.action == 'Dispatched' %}
+                    <i class="fa-solid fa-truck-fast" style="color: #FBBF24;"></i>
+                    {% elif log.action == 'Arrived' %}
+                    <i class="fa-solid fa-box-open" style="color: #60A5FA;"></i>
+                    {% elif log.action == 'Verified' %}
+                    <i class="fa-solid fa-circle-check" style="color: #10B981;"></i>
+                    {% else %}
+                    <i class="fa-solid fa-shield-halved" style="color: #F87171;"></i>
+                    {% endif %}
+                    <p>Exam <b>{{ log.exam_code }}</b>: {{ log.action }} status completed by operator ({{ log.operator
+                        }})</p>
+                    <p>{{ log.time_ago }}</p>
+                </div>
+                {% else %}
+                <div class="activity-item">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <p>No recent operational logs verified in ledger.</p>
+                    <p>--</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+
+        <!-- Risk Index Bar Chart -->
+        <div class="risk-chart">
+            <h2>
+                <i class="fa-solid fa-chart-column"></i>
+                Center Risk Level Analysis (%)
+            </h2>
+            <canvas id="riskChart"></canvas>
+        </div>
+
+
+        <!-- State Risk Grid heatmap -->
+        <div class="state-heatmap">
+            <h2>
+                <i class="fa-solid fa-map-location-dot"></i>
+                State-Level Vulnerability Heatmap
+            </h2>
+            <div class="state-grid">
+                <div class="low">Rajasthan</div>
+                <div class="low">Gujarat</div>
+                <div class="high">Maharashtra</div>
+                <div class="medium">Madhya Pradesh</div>
+                <div class="high">Uttar Pradesh</div>
+                <div class="high">Bihar</div>
+                <div class="low">West Bengal</div>
+                <div class="low">Karnataka</div>
+                <div class="medium">Tamil Nadu</div>
+                <div class="medium">Andhra Pradesh</div>
+                <div class="low">Telangana</div>
+                <div class="medium">Odisha</div>
+                <div class="low">Punjab</div>
+                <div class="medium">Haryana</div>
+                <div class="high">Delhi</div>
+                <div class="low">Himachal Pradesh</div>
+            </div>
+        </div>
+
+
+    </div>
+
+
+    <!-- Leaflet.js library for mapping -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+
+    <!-- Injects Leaflet data securely as JSON before loading main dashboard JS file -->
+    <script>
+        const EXAM_CENTERS_DATA = {{ centers_data | tojson | safe }};
+    </script>
+
+
+    <!-- Link to external modular dashboard JavaScript file -->
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script>
+function loadNotifications(){
+
+    fetch("/notifications")
+
+    .then(res=>res.json())
+
+    .then(data=>{
+
+        document.getElementById("notification-count").innerText=data.count;
+
+        let box=document.getElementById("notification-box");
+
+        box.style.display="block";
+
+        box.innerHTML=`
+            <div class="notification-header">
+                🔔 Notifications
+            </div>
+        `;
+
+        if(data.notifications.length===0){
+
+            box.innerHTML+=`
+                <div class="notification-item">
+                    No notifications available
+                </div>
+            `;
+
+            return;
+        }
+
+        data.notifications.forEach(function(n){
+
+            box.innerHTML+=`
+                <div class="notification-item">
+                    <b>${n.title}</b><br>
+                    ${n.message}<br>
+                    <small>${n.created_at}</small>
+                </div>
+            `;
+
+        });
+
+    })
+
+    .catch(err=>{
+        console.log(err);
+    });
+
+    window.onload=function(){
+
+    fetch("/notifications")
+    .then(res=>res.json())
+    .then(data=>{
+
+        document.getElementById("notification-count").innerText=data.count;
+
+    });
+
+}
+
+}
+    
+
+
+
+
+</script>
+</body>
+
+
+</html>
+

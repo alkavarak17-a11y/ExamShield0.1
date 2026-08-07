@@ -1,0 +1,570 @@
+/* ==========================================
+   EXAMSHIELD - TRANSIT TRACKING STYLES
+   ========================================== */
+
+
+/* Split layout containers */
+.tracking-container {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 30px;
+    margin-top: 20px;
+}
+
+
+/* Left panel: Map container */
+.map-panel {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    padding: 25px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+
+.map-panel h2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: #3b82f6;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+
+#tracking-map {
+    height: 500px;
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 1;
+}
+
+
+/* Right panel: Telemetry and timeline dashboard */
+.details-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+
+/* Search card layout */
+.search-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+}
+
+
+.search-form {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+
+.search-form label {
+    font-size: 13px;
+    color: #94a3b8;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+
+.search-form select {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #1e293b;
+    color: white;
+    outline: none;
+    font-size: 15px;
+    transition: all 0.3s;
+}
+
+
+.search-form select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+}
+
+
+.track-submit-btn {
+    padding: 12px 24px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+
+.track-submit-btn:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+
+/* Telemetry stats cards */
+.telemetry-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+
+.telemetry-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+
+.telemetry-card i {
+    font-size: 24px;
+    color: #60a5fa;
+    width: 30px;
+    text-align: center;
+}
+
+
+.telemetry-card .info {
+    display: flex;
+    flex-direction: column;
+}
+
+
+.telemetry-card .title {
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+
+.telemetry-card .value {
+    font-size: 16px;
+    font-weight: bold;
+    color: #f8fafc;
+    margin-top: 3px;
+}
+
+
+.value.secure {
+    color: #10b981 !important;
+}
+
+
+.value.warning {
+    color: #f59e0b !important;
+}
+
+
+/* Transit Timeline Panel */
+.timeline-panel {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    padding: 25px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    flex: 1;
+}
+
+
+.timeline-panel h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #3b82f6;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+
+/* Vertical Timeline Line */
+.transit-timeline {
+    position: relative;
+    padding-left: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+
+.transit-timeline::before {
+    content: '';
+    position: absolute;
+    left: 9px;
+    top: 5px;
+    bottom: 5px;
+    width: 2px;
+    background: #1e293b;
+    z-index: 1;
+}
+
+
+/* Timeline Item */
+.timeline-item {
+    position: relative;
+    z-index: 2;
+}
+
+
+/* Milestone Circle Checkmarks */
+.timeline-item .node {
+    position: absolute;
+    left: -30px;
+    top: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #1e293b;
+    border: 3px solid #0f172a;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s;
+}
+
+
+/* Timeline text descriptors */
+.timeline-item .content {
+    display: flex;
+    flex-direction: column;
+}
+
+
+.timeline-item .content h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #cbd5e1;
+}
+
+
+.timeline-item .content p {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 3px;
+}
+
+
+/* Timeline item state colorizers */
+.timeline-item.completed .node {
+    background: #10b981;
+    border-color: #064e3b;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+}
+
+
+.timeline-item.completed .content h4 {
+    color: #f8fafc;
+}
+
+
+.timeline-item.current .node {
+    background: #3b82f6;
+    border-color: #1e3a8a;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
+    animation: pulseNode 1.5s infinite ease-in-out;
+}
+
+
+.timeline-item.current .content h4 {
+    color: #3b82f6;
+    font-weight: 700;
+}
+
+
+.timeline-item.pending .node {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+
+.timeline-item.pending .content h4 {
+    color: #64748b;
+}
+
+
+/* Dynamic Timeline highlight bar overlay */
+.timeline-progress-bar {
+    position: absolute;
+    left: 9px;
+    top: 5px;
+    width: 2px;
+    background: #2563eb;
+    z-index: 1;
+    transition: height 0.5s ease;
+}
+
+
+/* Keyframe Animations */
+@keyframes pulseNode {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.15);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+
+/* ================= RESPONSIVE LAYOUTS ================= */
+@media(max-width: 1024px) {
+    .tracking-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+@media(max-width: 480px) {
+    .search-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+   
+    .telemetry-grid {
+        grid-template-columns: 1fr;
+    }
+}
+/* ===========================
+   Transit Progress Card
+=========================== */
+
+
+.progress-card{
+    background:rgba(255,255,255,.05);
+    border-radius:18px;
+    padding:22px;
+    margin-bottom:25px;
+    backdrop-filter:blur(10px);
+    border:1px solid rgba(255,255,255,.08);
+}
+
+
+.progress-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:18px;
+}
+
+
+.progress-header h2{
+    color:#3b82f6;
+    font-size:20px;
+}
+
+
+.progress-header span{
+    color:#94a3b8;
+    font-size:14px;
+}
+
+
+.progress-bar{
+    width:100%;
+    height:12px;
+    border-radius:20px;
+    background:#1e293b;
+    overflow:hidden;
+}
+
+
+.progress-fill{
+    height:100%;
+    background:linear-gradient(90deg,#22c55e,#3b82f6);
+    border-radius:20px;
+    transition:width .8s ease;
+}
+
+
+.progress-text{
+    margin-top:12px;
+    text-align:right;
+    color:#cbd5e1;
+    font-size:13px;
+}
+/* ===========================
+   Current Timeline Animation
+=========================== */
+
+
+.timeline-item.current{
+
+
+    background:rgba(59,130,246,.12);
+    border-radius:12px;
+    padding:12px;
+    animation:pulseLocation 1.8s infinite;
+
+
+}
+
+
+.timeline-item.current .node{
+
+
+    background:#3b82f6 !important;
+    box-shadow:0 0 18px #3b82f6;
+
+
+}
+
+
+@keyframes pulseLocation{
+
+
+    0%{
+        box-shadow:0 0 0 rgba(59,130,246,0);
+    }
+
+
+    50%{
+        box-shadow:0 0 20px rgba(59,130,246,.45);
+    }
+
+
+    100%{
+        box-shadow:0 0 0 rgba(59,130,246,0);
+    }
+
+
+}
+/* ===========================
+   Moving Truck Animation
+=========================== */
+
+
+.moving-truck{
+
+
+    font-size:60px;
+    color:#3b82f6;
+
+
+    animation:truckMove 2s ease-in-out infinite;
+
+
+}
+
+
+@keyframes truckMove{
+
+
+    0%{
+        transform:translateX(0);
+    }
+
+
+    50%{
+        transform:translateX(12px);
+    }
+
+
+    100%{
+        transform:translateX(0);
+    }
+
+
+}
+/* ===========================
+   Status Badge
+=========================== */
+
+
+.status-badge{
+
+
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+
+
+    padding:8px 16px;
+
+
+    border-radius:30px;
+
+
+    margin-left:8px;
+
+
+    font-size:13px;
+
+
+    font-weight:600;
+
+
+}
+
+
+.status-badge.transit{
+
+
+    background:rgba(59,130,246,.18);
+    color:#3b82f6;
+
+
+}
+
+
+.status-badge.arrived{
+
+
+    background:rgba(34,197,94,.15);
+    color:#22c55e;
+
+
+}
+
+
+.status-badge.delivered{
+
+
+    background:rgba(16,185,129,.18);
+    color:#10b981;
+
+
+}
+/* ===========================
+   Timeline Animation
+=========================== */
+
+
+.timeline-item{
+
+
+    transition:
+        opacity .6s ease,
+        transform .6s ease;
+
+
+}

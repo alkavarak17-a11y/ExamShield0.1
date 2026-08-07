@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Page title shown on browser tab -->
+    <title>EXAMSHIELD - Secure Login</title>
+
+    <!-- Font Awesome library for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    
+    <!-- Link to external modular stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+</head>
+
+<body>
+
+    <!-- ===== LOGIN CARD START ===== -->
+    <div class="login-container">
+
+        <!-- Website name -->
+        <h1>EXAMSHIELD</h1>
+
+        <!-- Security information badge -->
+        <p class="encrypt">
+            🔒 Government of India Secure Access Portal
+        </p>
+
+        <!-- Encryption message -->
+        <p>
+            AES-256 Encrypted Connection
+        </p>
+
+        <!-- Flash messages for error / success feedback -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul class="flash-messages">
+                    {% for category, message in messages %}
+                        <li class="flash-message {{ category }}">
+                            {% if category == 'error' %}
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                            {% else %}
+                                <i class="fa-solid fa-circle-check"></i>
+                            {% endif %}
+                            {{ message }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+
+        <!-- ===== LOGIN FORM START ===== -->
+        <!-- Data will be sent to Flask /login route -->
+        <form action="/login" method="POST">
+
+            <!-- Government ID input -->
+            <label>GOVERNMENT ID</label>
+            <input 
+                type="text" 
+                name="government_id" 
+                placeholder="Officer.id@gov.in" 
+                required
+            >
+
+            <!-- Password input -->
+            <label>PASSWORD</label>
+            <input 
+                type="password" 
+                name="password" 
+                placeholder="Enter Password"
+                required
+            >
+
+            <!-- ===== OPTIONS SECTION ===== -->
+            <div class="options">
+
+                <!-- Remember me checkbox -->
+                <div>
+                    <input type="checkbox" id="remember" name="remember">
+                    <label for="remember">
+                        Remember Me
+                    </label>
+                </div>
+
+                <!-- Forgot password link -->
+                <a href="/forgot-password" class="forgot-link">
+                    Forgot password?
+                </a>
+
+            </div>
+
+            <!-- Secure login button -->
+            <button type="submit" class="login-btn">
+                🔒 Secure Login
+            </button>
+
+            <!-- Divider between login methods -->
+            <div class="divider">
+                <hr>
+                <span>OR</span>
+                <hr>
+            </div>
+
+
+            <!-- Biometric Login -->
+            <input 
+                type="hidden" 
+                id="bio-government-id"
+            >
+
+
+            <button 
+                type="button" 
+                class="bio-btn"
+                onclick="biometricLogin()">
+
+                <i class="fa-solid fa-fingerprint"></i>
+                Biometric Login
+
+            </button>
+        <!-- ===== LOGIN FORM END ===== -->
+            </form>
+    </div>
+
+    <!-- ===== LOGIN CARD END ===== -->
+<script>
+
+function biometricLogin(){
+
+    let govId = document.querySelector(
+        "input[name='government_id']"
+    ).value;
+
+
+    if(govId.trim() === ""){
+        alert("Please enter Government ID first.");
+        return;
+    }
+
+
+    let form = document.createElement("form");
+
+    form.method = "POST";
+    form.action = "/biometric-login";
+
+
+    let input = document.createElement("input");
+
+    input.type = "hidden";
+    input.name = "government_id";
+    input.value = govId;
+
+
+    form.appendChild(input);
+
+    document.body.appendChild(form);
+
+    form.submit();
+
+}
+
+</script>
+    <!-- Link to external JavaScript file -->
+    <script src="{{ url_for('static', filename='js/login.js') }}"></script>
+</body>
+
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>Search Results - EXAMSHIELD</title>
+
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f5f7fb;
+        padding: 30px;
+    }
+
+    h2 {
+        color: #1a237e;
+        margin-bottom: 20px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+    }
+
+    th {
+        background: #1a237e;
+        color: white;
+        padding: 12px;
+        text-align: left;
+    }
+
+    td {
+        padding: 12px;
+        border-bottom: 1px solid #ddd;
+    }
+
+    tr:hover {
+        background: #f1f5ff;
+    }
+
+    a {
+        text-decoration: none;
+        padding: 6px 10px;
+        border-radius: 5px;
+        background: #2563eb;
+        color: white;
+        margin-right: 5px;
+        font-size: 13px;
+    }
+
+    a:hover {
+        background: #1e40af;
+    }
+
+    .back-btn {
+        display: inline-block;
+        margin-bottom: 20px;
+        background: #555;
+    }
+
+    .no-data {
+        color: red;
+        font-size: 18px;
+    }
+
+</style>
+
+
+</head>
+
+<body>
+
+<a class="back-btn" href="{{ url_for('dashboard') }}">
+    ← Back to Dashboard
+</a>
+
+<h2>
+    Search Results for "{{ keyword }}"
+</h2>
+
+{% if exams %}
+
+<table>
+
+<tr>
+    <th>Exam Code</th>
+    <th>Exam Name</th>
+    <th>State</th>
+    <th>Status</th>
+    <th>Actions</th>
+</tr>
+
+{% for exam in exams %}
+
+<tr>
+
+<td>
+    {{ exam.exam_code }}
+</td>
+
+<td>
+    {{ exam.exam_name }}
+</td>
+
+<td>
+    {{ exam.state_ut }}
+</td>
+
+<td>
+    {{ exam.status }}
+</td>
+
+<td>
+
+<a href="{{ url_for('tracking', exam_code=exam.exam_code) }}">
+    Tracking
+</a>
+
+<a href="{{ url_for('blockchain', exam_code=exam.exam_code) }}">
+    Blockchain
+</a>
+
+<a href="{{ url_for('reports', exam_code=exam.exam_code) }}">
+    Report
+</a>
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+{% else %}
+
+<p class="no-data">
+    No examinations found.
+</p>
+
+{% endif %}
+
+</body>
+</html>

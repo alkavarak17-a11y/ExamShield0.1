@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EXAMSHIELD - OTP Verification</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/verify.css') }}">
+</head>
+
+<body>
+    <div class="verification-container">
+        <div class="verification-box">
+            <h1>EXAMSHIELD</h1>
+            <p class="encrypt">🔒 Government of India Secure Access Portal</p>
+            <p>AES-256 Encrypted Connection</p>
+
+            <h2>Two-Factor Verification</h2>
+            <p>Enter the 6-digit verification code sent to your registered email address.</p>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <ul class="flash-messages">
+                        {% for category, message in messages %}
+                            <li class="flash-message {{ category }}">
+                                <i class="fa-solid fa-triangle-exclamation"></i> {{ message }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            {% endwith %}
+
+            <form action="/verify" method="POST">
+                <div class="otp-box">
+                    <input type="text" class="otp-input" maxlength="1" required>
+                    <input type="text" class="otp-input" maxlength="1" required>
+                    <input type="text" class="otp-input" maxlength="1" required>
+                    <input type="text" class="otp-input" maxlength="1" required>
+                    <input type="text" class="otp-input" maxlength="1" required>
+                    <input type="text" class="otp-input" maxlength="1" required>
+                </div>
+
+                <button type="submit" class="verify-btn">🔐 Verify & Enter</button>
+
+                <div class="timer-container" id="timer-container">
+                    OTP expires in: <span id="countdown-timer">05:00</span> minutes
+                </div>
+
+                <div class="resend-container">
+                    <button type="button" class="resend-btn" id="resend-btn" disabled>
+                        Resend OTP
+                    </button>
+                </div>
+            </form>
+
+            <a href="/logout" class="back-link">← Back to Login</a>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/verify.js') }}"></script>
+</body>
+
+</html>

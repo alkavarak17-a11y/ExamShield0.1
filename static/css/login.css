@@ -1,0 +1,512 @@
+/* ===== IMPORT GOOGLE FONT ===== */
+/* Loads Poppins font style from Google */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+/* ===== GLOBAL SETTINGS ===== */
+/* Applies margin, padding and font to all elements */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* ===== BODY DESIGN ===== */
+/* Creates dark background and centers login box */
+body {
+    background: #0F172A;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    color: white;
+    overflow: hidden;
+}
+
+/* ===== LOGIN CONTAINER ===== */
+/* Main glass effect login card */
+.login-container {
+    width: 420px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 18px;
+    padding: 40px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.45);
+    z-index: 10;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.login-container:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 50px rgba(59, 130, 246, 0.15);
+}
+
+/* ===== PROJECT TITLE ===== */
+/* Styling for EXAMSHIELD heading */
+.login-container h1 {
+    text-align: center;
+    color: #3B82F6;
+    font-size: 34px;
+    margin-bottom: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+/* ===== PARAGRAPH STYLE ===== */
+/* Styling for security messages */
+.login-container p {
+    text-align: center;
+    color: #CBD5E1;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+/* ===== SECURITY BADGE ===== */
+/* Green encrypted connection box */
+.encrypt {
+    display: inline-block;
+    width: 100%;
+    text-align: center;
+    background: #14532D;
+    color: #86EFAC;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 25px;
+    font-weight: 500;
+}
+
+/* ===== FORM LABEL ===== */
+/* Styling for input field names */
+label {
+    display: block;
+    margin-top: 15px;
+    margin-bottom: 8px;
+    color: #E2E8F0;
+    font-weight: 500;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+}
+
+/* ===== INPUT BOX ===== */
+/* Design of ID and password fields */
+input[type=text],
+input[type=password] {
+    width: 100%;
+    padding: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    outline: none;
+    border-radius: 10px;
+    background: #1E293B;
+    color: white;
+    font-size: 15px;
+    transition: all 0.3s ease;
+}
+
+/* Placeholder text color */
+input::placeholder {
+    color: #94A3B8;
+}
+
+/* Input focus effect */
+input:focus {
+    border: 1px solid #3B82F6;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+    background: #1e293bcf;
+}
+
+/* ===== REMEMBER ME AND FORGOT PASSWORD SECTION ===== */
+.options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.options div {
+    display: flex;
+    align-items: center;
+}
+
+.options input[type=checkbox] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #2563EB;
+}
+
+/* Remember me label alignment */
+.options label {
+    display: inline;
+    margin-left: 8px;
+    margin-top: 0;
+    font-size: 14px;
+    color: #94A3B8;
+    cursor: pointer;
+}
+
+/* Forgot password link */
+.options a {
+    color: #60A5FA;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+/* Hover effect on link */
+.options a:hover {
+    color: #3b82f6;
+    text-decoration: underline;
+}
+
+/* ===== LOGIN BUTTON ===== */
+.login-btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    background: #2563EB;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Login button hover animation */
+.login-btn:hover {
+    background: #1D4ED8;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
+}
+
+.login-btn:active {
+    transform: translateY(0);
+}
+
+/* ===== OR DIVIDER ===== */
+/* Separates password login and biometric login */
+.divider {
+    display: flex;
+    align-items: center;
+    margin: 25px 0;
+}
+
+.divider hr {
+    flex: 1;
+    border: none;
+    height: 1px;
+    background: #475569;
+}
+
+.divider span {
+    margin: 0 15px;
+    color: #94A3B8;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* ===== BIOMETRIC LOGIN BUTTON ===== */
+.bio-btn {
+    width: 100%;
+    padding: 15px;
+    background: transparent;
+    border: 2px solid #2563EB;
+    color: #60A5FA;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Biometric button hover effect */
+.bio-btn:hover {
+    background: #2563EB;
+    color: white;
+    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.2);
+}
+
+/* ===== FLASH MESSAGES ===== */
+.flash-messages {
+    margin-bottom: 20px;
+    list-style: none;
+}
+
+.flash-message {
+    padding: 12px 15px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.flash-message.error {
+    background: rgba(220, 38, 38, 0.15);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    color: #F87171;
+}
+
+.flash-message.success {
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #34D399;
+}
+
+/* ===== BIOMETRIC OVERLAY MODAL ===== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 1000;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.bio-modal-card {
+    width: 380px;
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 18px;
+    padding: 30px;
+    text-align: center;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+    color: white;
+}
+
+.modal-overlay.active .bio-modal-card {
+    transform: scale(1);
+}
+
+.bio-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 25px;
+    color: #3B82F6;
+}
+
+.scanner-container {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 30px;
+    border-radius: 50%;
+    background: rgba(59, 130, 246, 0.05);
+    border: 2px dashed rgba(59, 130, 246, 0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.fingerprint-icon {
+    font-size: 64px;
+    color: #60A5FA;
+    transition: color 0.3s ease;
+}
+
+/* Pulsing scale for fingerprint during scan */
+.scanning .fingerprint-icon {
+    animation: fingerPulse 1.5s infinite ease-in-out;
+    color: #3B82F6;
+}
+
+.scanner-laser {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #3B82F6, transparent);
+    box-shadow: 0 0 10px #3B82F6;
+    opacity: 0;
+}
+
+.scanning .scanner-laser {
+    opacity: 1;
+    animation: laserScan 2s infinite linear;
+}
+
+.bio-status {
+    font-size: 14px;
+    color: #CBD5E1;
+    margin-bottom: 20px;
+}
+
+.cancel-modal-btn {
+    padding: 10px 20px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #94A3B8;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.cancel-modal-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+}
+
+/* Biometric Scan Animations */
+@keyframes laserScan {
+    0% {
+        top: 0%;
+    }
+    50% {
+        top: 100%;
+    }
+    100% {
+        top: 0%;
+    }
+}
+
+@keyframes fingerPulse {
+    0% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+    50% {
+        transform: scale(1.08);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+}
+
+/* ===== FORGOT PASSWORD MODAL ===== */
+.forgot-modal-card {
+    width: 400px;
+    background: rgba(30, 41, 59, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 18px;
+    padding: 30px;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+    text-align: left;
+}
+
+.modal-overlay.active .forgot-modal-card {
+    transform: scale(1);
+}
+
+.forgot-modal-card h2 {
+    font-size: 22px;
+    color: #3B82F6;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.forgot-modal-card p {
+    color: #94A3B8;
+    font-size: 14px;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.forgot-modal-card .form-group {
+    margin-bottom: 20px;
+}
+
+.forgot-modal-card input {
+    margin-bottom: 10px;
+}
+
+.forgot-modal-card .forgot-hint {
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 13px;
+    color: #93C5FD;
+    margin-top: 10px;
+    display: none;
+    word-break: break-all;
+}
+
+.forgot-modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 25px;
+}
+
+.action-btn {
+    padding: 10px 20px;
+    background: #2563EB;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.action-btn:hover {
+    background: #1D4ED8;
+}
+
+/* ===== PASSWORD STRENGTH CHECKLIST ===== */
+.pwd-checklist {
+    list-style: none;
+    margin: 8px 0;
+    padding: 0;
+}
+
+.pwd-criterion {
+    font-size: 12px;
+    color: #F87171;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.pwd-criterion.valid {
+    color: #34D399;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+/* Adjusts login box for mobile screens */
+@media(max-width: 480px) {
+    .login-container {
+        width: 90%;
+        padding: 30px;
+    }
+}

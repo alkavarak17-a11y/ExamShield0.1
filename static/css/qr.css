@@ -1,0 +1,299 @@
+/* ==========================================
+   EXAMSHIELD - QR GENERATOR STYLES
+   ========================================== */
+
+
+/* Main layout wrapper */
+.qr-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 30px;
+    width: 100%;
+}
+
+
+/* Glassmorphism QR Card */
+.qr-card {
+    width: 480px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    padding: 35px;
+    text-align: center;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+
+.qr-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 45px rgba(59, 130, 246, 0.15);
+}
+
+
+.qr-card h2 {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 25px;
+    color: #3b82f6;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+
+/* QR Code Image Container */
+.qr-output-box {
+    width: 250px;
+    height: 250px;
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    margin: 0 auto 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+
+.qr-output-box canvas,
+.qr-output-box img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+
+/* Metadata Grid */
+.qr-details-table {
+    width: 100%;
+    margin-bottom: 30px;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+
+.qr-details-table tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+
+.qr-details-table tr:last-child {
+    border-bottom: none;
+}
+
+
+.qr-details-table td {
+    padding: 12px 8px;
+    font-size: 13px;
+}
+
+
+.qr-details-table td.label-name {
+    color: #94a3b8;
+    font-weight: 600;
+    width: 35%;
+}
+
+
+.qr-details-table td.value-data {
+    color: #cbd5e1;
+    font-weight: 500;
+    word-break: break-all;
+}
+
+
+/* Action Buttons Container */
+.qr-actions-row {
+    display: flex;
+    gap: 15px;
+}
+
+
+.qr-btn {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+
+.qr-btn.download-btn {
+    background: #2563eb;
+    color: white;
+}
+
+
+.qr-btn.download-btn:hover {
+    background: #1d4ed8;
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.3);
+    transform: translateY(-1px);
+}
+
+
+.qr-btn.print-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #cbd5e1;
+}
+
+
+.qr-btn.print-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: #cbd5e1;
+    color: white;
+}
+
+
+/* ================= PRINT STYLESHEET ================= */
+@media print {
+    /* Set page background to white for printing */
+    body {
+        background: white !important;
+        color: black !important;
+        font-family: Arial, sans-serif !important;
+    }
+   
+    /* Hide navigation sidebars, headers, action buttons, and searches */
+    .sidenav,
+    .section,
+    .search-card,
+    .qr-actions-row,
+    .menu-toggle {
+        display: none !important;
+    }
+   
+    /* Reset margins for content */
+    .main-content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+    }
+   
+    .qr-container {
+        margin-top: 0 !important;
+    }
+   
+    /* Format the card to look like a clean sticky label label */
+    .qr-card {
+        width: 100% !important;
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+        padding: 20px !important;
+        color: black !important;
+    }
+   
+    .qr-card h2 {
+        color: black !important;
+        font-size: 26px !important;
+    }
+   
+    .qr-details-table td {
+        color: black !important;
+        font-size: 14px !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+    }
+   
+    .qr-details-table td.label-name {
+        color: #475569 !important;
+    }
+   
+    .qr-details-table td.value-data {
+        color: black !important;
+    }
+   
+    .qr-output-box {
+        border: 2px solid black !important;
+        box-shadow: none !important;
+        width: 250px !important;
+        height: 250px !important;
+    }
+}
+.qr-card{
+
+
+    animation: fadeUp .8s ease;
+
+
+}
+
+
+@keyframes fadeUp{
+
+
+from{
+
+
+opacity:0;
+transform:translateY(30px);
+
+
+}
+
+
+to{
+
+
+opacity:1;
+transform:translateY(0);
+
+
+}
+
+
+}
+.scan-note{
+    margin-top:15px;
+    color:#94a3b8;
+    font-size:13px;
+    text-align:center;
+}
+
+
+.scan-note i{
+    color:#3b82f6;
+    margin-right:6px;
+}
+.status-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:6px 12px;
+    border-radius:20px;
+    font-size:12px;
+    font-weight:600;
+}
+
+
+.status-badge.verified{
+    background:#14532d;
+    color:#22c55e;
+}
+
+
+.status-badge.arrived{
+    background:#1e3a8a;
+    color:#60a5fa;
+}
+
+
+.status-badge.transit{
+    background:#78350f;
+    color:#fbbf24;
+}

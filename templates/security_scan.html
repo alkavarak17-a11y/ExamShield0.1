@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EXAMSHIELD - AI Security Engine</title>
+
+
+    <!-- Import Font Awesome library for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+
+    <!-- Import Poppins font from Google -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+
+    <!-- Link to dashboard base CSS (reusing sidebar styles) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+
+
+    <!-- Link to specific AI scan styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/security_scan.css') }}">
+</head>
+
+
+<body>
+
+
+    <!-- Responsive hamburger menu for mobile navigation -->
+    <button class="menu-toggle" id="mobile-menu-btn">
+        <i class="fa-solid fa-bars" id="menu-icon"></i>
+    </button>
+
+
+    <!-- Sidebar navigation layout -->
+    <div id="mysidenav" class="sidenav">
+        <h3>EXAMSHIELD</h3>
+        <a href="/dashboard">
+            <i class="fa-solid fa-chart-pie"></i> Dashboard
+        </a>
+        <a href="/create_exam">
+            <i class="fa-solid fa-file-pen"></i> Create Exam
+        </a>
+        <a href="/security_scan" class="active">
+            <i class="fa-solid fa-shield-halved"></i> Paper Security
+        </a>
+        <a href="/blockchain">
+            <i class="fa-solid fa-link"></i> Secure Chain
+        </a>
+        <a href="/tracking">
+            <i class="fa-solid fa-route"></i> Tracking
+        </a>
+        <a href="/reports">
+            <i class="fa-solid fa-chart-line"></i> Reports
+        </a>
+        <a href="/logout">
+            <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </a>
+    </div>
+
+
+    <!-- Header bar panel -->
+    <div class="section">
+        <h3>AI Security Scanning Console</h3>
+        <div class="header-right">
+            <!-- Notification bell -->
+            <div class="top-icons">
+                <i class="fa-solid fa-bell notification"></i>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+
+
+        <!-- Search and Selection Panel -->
+        <section class="search-card">
+            <form action="/security_scan" method="GET" class="search-form"
+                style="display: flex; gap: 15px; align-items: center;">
+                <label for="exam_code_select" style="font-size: 13px; color: #94a3b8; font-weight: 600;">CHOOSE TARGET
+                    EXAM :</label>
+                <select name="exam_code" id="exam_code_select"
+                    style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1); background: #1e293b; color: white; font-size: 15px;"
+                    onchange="this.form.submit()">
+                    <option value="">-- Select uploaded exam --</option>
+                    {% for ex in uploaded_exams %}
+                    <option value="{{ ex.exam_code }}" {% if ex.exam_code==exam.exam_code %}selected{% endif %}>
+                        {{ ex.exam_code }} - {{ ex.exam_name }} ({{ ex.status }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </form>
+        </section>
+
+
+        {% if exam %}
+        <!-- Two column layout containing Radar and Terminal -->
+        <div class="scan-container">
+
+
+            <!-- Left Column: Radar Panel -->
+            <div class="radar-panel">
+                <h2>
+                    <i class="fa-solid fa-radar"></i>
+                    Scanner Diagnostic
+                </h2>
+
+
+                <!-- Pulsing sweep radar circle (hidden if already scanned) -->
+                <div id="radar-wrapper" class="radar-wrapper"
+                    style="{% if exam.status != 'Created' and exam.status != 'Uploaded' %}display: none;{% endif %}">
+                    <div class="radar-sweep"></div>
+                    <div id="radar-center" class="radar-center"></div>
+                </div>
+
+
+                <!-- Final score Display (visible if already scanned) -->
+                <div id="score-display" class="score-display"
+
+
+               
+                    style="{% if exam.status == 'Created' or exam.status == 'Uploaded' %}display: none;{% else %}display: flex; margin: 30px 0;{% endif %}">
+                    <div id="score-value" class="circle">
+                        {{ exam.security_score or '95' }}%
+                    </div>
+                    <p style="font-size: 14px; font-weight: 600; color: #10b981;">
+                        <i class="fa-solid fa-circle-check"></i> Paper Integrity Certified
+                    </p>
+
+
+                    <div class="scan-details" style="margin-top:20px; text-align:left;">
+
+
+                    <p>
+                        <i class="fa-solid fa-file-shield"></i>
+                        <strong>Metadata:</strong>
+
+
+                        {% if exam.metadata_removed %}
+                            Removed
+                        {% else %}
+                            Already Clean
+                        {% endif %}
+                    </p>
+
+
+                    <p>
+                        <i class="fa-solid fa-water"></i>
+                        <strong>Watermark:</strong>
+
+
+                        Not Yet Embedded
+                    </p>
+
+
+                    <p>
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <strong>Plagiarism Match:</strong>
+
+
+                        {% if exam.plagiarism_score is not none %}
+                            {{ exam.plagiarism_score }}%
+                        {% else %}
+                            Not Analyzed
+                        {% endif %}
+                    </p>
+
+
+                </div>
+                </div>
+
+
+                <!-- Scan Trigger Actions -->
+                <div class="scan-actions">
+                    {% if exam.status == 'Created' or exam.status == 'Uploaded' %}
+                    <button id="start-scan-btn" type="button" class="scan-btn start-btn">
+                        <i class="fa-solid fa-fingerprint"></i> Initialize AI Security Sweep
+                    </button>
+                    {% endif %}
+
+
+                    <a href="/blockchain?exam_code={{ exam.exam_code }}" id="continue-btn" class="scan-btn continue-btn"
+                        style="{% if exam.status == 'Created' or exam.status == 'Uploaded' %}display: none;{% else %}display: flex;{% endif %}">
+                        Register Secure DNA <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+
+            <!-- Right Column: Monospaced diagnostic terminal logs -->
+            <div class="terminal-panel">
+                <div class="terminal-header">
+                    <div class="title">
+                        <i class="fa-solid fa-terminal"></i>
+                        SHIELD-AI DIAGNOSTICS: {{ exam.exam_code }}
+                    </div>
+                    <div class="dots">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                    </div>
+
+                    <div id="terminal-body" class="terminal-body"></div>
+
+                </div>
+
+
+               
+                </div>
+
+
+                </div>
+
+
+                {% if exam.security_report %}
+                <div class="radar-panel" style="margin-top:30px;">
+
+
+                    <h2>
+                        <i class="fa-solid fa-robot"></i>
+                        Gemini AI Security Analysis
+                    </h2>
+
+
+                    <div style="
+                        background:#0f172a;
+                        color:#22c55e;
+                        padding:20px;
+                        border-radius:10px;
+                        margin-top:15px;
+                        font-family:Consolas, monospace;
+                        white-space:pre-wrap;
+                        line-height:1.6;
+                        font-size:14px;
+                        border:1px solid rgba(255,255,255,.1);
+                    ">
+
+
+                    {{ exam.security_report }}
+
+
+                                </div>
+
+
+                        </div>
+                        {% endif %}
+
+
+                        {% else %}
+        <!-- Warning display if no uploaded exams exist -->
+        <div class="radar-panel" style="margin-top: 20px; text-align: center; padding: 50px;">
+            <i class="fa-solid fa-triangle-exclamation"
+                style="font-size: 48px; color: #fbbf24; margin-bottom: 20px;"></i>
+            <h2>No Uploaded Exams Found</h2>
+            <p style="color:#94a3b8; font-size:14px;">Please create an exam and upload its question paper packet to
+                enable AI Security diagnostics.</p>
+        </div>
+        {% endif %}
+
+
+    </div>
+
+
+    <!-- Link to scanner controller scripts -->
+    <script src="{{ url_for('static', filename='js/security_scan.js') }}"></script>
+</body>
+
+
+</html>

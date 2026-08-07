@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EXAMSHIELD - Transit Route Tracking</title>
+
+
+    <!-- Import Font Awesome library for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+   
+    <!-- Import Leaflet.js map styles -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+   
+    <!-- Import Poppins font from Google -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+   
+    <!-- Link to dashboard base CSS (reusing sidebar styles) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+   
+    <!-- Link to specific paper tracking styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tracking.css') }}">
+</head>
+
+
+<body>
+
+
+    <!-- Responsive hamburger menu for mobile navigation -->
+    <button class="menu-toggle" id="mobile-menu-btn">
+        <i class="fa-solid fa-bars" id="menu-icon"></i>
+    </button>
+
+
+    <!-- Sidebar navigation layout -->
+    <div id="mysidenav" class="sidenav">
+        <h3>EXAMSHIELD</h3>
+        <a href="/dashboard">
+            <i class="fa-solid fa-chart-pie"></i> Dashboard
+        </a>
+        <a href="/create_exam">
+            <i class="fa-solid fa-file-pen"></i> Create Exam
+        </a>
+        <a href="/security_scan">
+            <i class="fa-solid fa-shield-halved"></i> Paper Security
+        </a>
+        <a href="/blockchain">
+            <i class="fa-solid fa-link"></i> Secure Chain
+        </a>
+        <a href="/tracking" class="active">
+            <i class="fa-solid fa-route"></i> Tracking
+        </a>
+        <a href="/reports">
+            <i class="fa-solid fa-chart-line"></i> Reports
+        </a>
+        <a href="/logout">
+            <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </a>
+    </div>
+
+
+    <!-- Header bar panel -->
+    <div class="section">
+        <h3>SmartTrace GPS Paper Tracking</h3>
+        <div class="header-right">
+            <!-- Notification bell -->
+            <div class="top-icons">
+                <i class="fa-solid fa-bell notification"></i>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+       
+        <!-- Search and Selection Panel -->
+        <section class="search-card">
+            <form action="/tracking" method="GET" class="search-form">
+                <label for="exam_code_select">SECURE EXAM CODE :</label>
+                <select name="exam_code" id="exam_code_select" onchange="this.form.submit()">
+                    <option value="">-- Choose active dispatch chain --</option>
+                    {% for ex in active_exams %}
+                        <option value="{{ ex.exam_code }}" {% if ex.exam_code == exam.exam_code %}selected{% endif %}>
+                            {{ ex.exam_code }} - {{ ex.exam_name }} ({{ ex.status }})
+                        </option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="track-submit-btn">
+                    <i class="fa-solid fa-location-crosshairs"></i> Synchronize GPS
+                </button>
+            </form>
+        </section>
+
+
+        {% if exam %}
+            
+
+
+<!-- Transit Progress -->
+<div class="progress-card">
+
+
+    <div class="progress-header">
+        <h2>
+            <i class="fa-solid fa-route"></i>
+            Overall Transit Progress
+        </h2>
+
+
+        <span>{{ transit_points|length }}/5 Checkpoints</span>
+    </div>
+
+
+    <div class="progress-bar">
+        <div class="progress-fill"
+             style="width: {{ (transit_points|length * 20) }}%;">
+        </div>
+    </div>
+
+
+    <p class="progress-text">
+        {{ transit_points|length * 20 }}% Route Completed
+    </p>
+
+
+</div>
+
+
+<!-- Two column layout containing GPS Map and logs -->
+<div class="tracking-container">
+               
+                <!-- Left panel: Leaflet Map -->
+                <div class="map-panel">
+                    <h2>
+                        <i class="fa-solid fa-map-location-dot"></i>
+                        GPS Transit Polyline Route ({{ exam.exam_code }})
+                    </h2>
+                    <div id="tracking-map"></div>
+                </div>
+
+
+                <!-- Right panel: Telemetry and Timeline details -->
+                <div class="details-panel">
+                   
+
+
+                    <!-- Live Dispatch Status -->
+                    <div class="dispatch-status-card">
+
+
+                        <div class="left">
+
+
+                            <h2>
+                               <i class="fa-solid fa-truck-moving moving-truck"></i>
+                            </h2>
+
+
+                            <p>
+                                <strong>Exam:</strong> {{ exam.exam_name }}
+                            </p>
+
+
+                            <p>
+                                <strong>Code:</strong> {{ exam.exam_code }}
+                            </p>
+
+
+                            <p>
+<strong>Status:</strong>
+
+
+{% if exam.status == "Verified" %}
+
+
+<span class="status-badge delivered">
+    <i class="fa-solid fa-circle-check"></i>
+    Delivered Securely
+</span>
+
+
+{% elif exam.status == "Arrived" %}
+
+
+<span class="status-badge arrived">
+    <i class="fa-solid fa-location-dot"></i>
+    Reached Destination
+</span>
+
+
+{% else %}
+
+
+<span class="status-badge transit">
+    <i class="fa-solid fa-truck-fast"></i>
+    Vehicle In Transit
+</span>
+
+
+{% endif %}
+
+
+</p>
+
+
+                        </div>
+
+
+                        <div class="right">
+
+
+                            <i class="fa-solid fa-truck-moving"
+                            style="font-size:60px;color:#3b82f6;"></i>
+
+
+                        </div>
+
+
+                    </div>
+                   
+                    <!-- Telemetry information container -->
+                    <div class="telemetry-grid">
+                        <!-- Card 1: Container Lock Seal -->
+                        <div class="telemetry-card">
+                            <i class="fa-solid fa-lock"></i>
+                            <div class="info">
+                                <span class="title">SMART SEAL</span>
+                                <span class="value secure">LOCKED</span>
+                            </div>
+                        </div>
+
+
+                        <!-- Card 2: Environment Temperature -->
+                        <div class="telemetry-card">
+                            <i class="fa-solid fa-thermometer-half"></i>
+                            <div class="info">
+                                <span class="title">INTERNAL TEMP</span>
+                                <span class="value">22.4 °C</span>
+                            </div>
+                        </div>
+
+
+                        <!-- Card 3: Internal Battery telemetry -->
+                        <div class="telemetry-card">
+                            <i class="fa-solid fa-battery-three-quarters"></i>
+                            <div class="info">
+                                <span class="title">GPS BATTERY</span>
+                                <span class="value">88%</span>
+                            </div>
+                        </div>
+
+
+                        <!-- Card 4: Light sensors for tampering -->
+                        <div class="telemetry-card">
+                            <i class="fa-solid fa-fingerprint"></i>
+                            <div class="info">
+                                <span class="title">TAMPER SENSORS</span>
+                                <span class="value secure">SECURE</span>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- Transit Milestones vertical timeline panel -->
+                    <div class="timeline-panel">
+                        <h2>
+                            <i class="fa-solid fa-route"></i>
+                            Transit Audit Logs
+                        </h2>
+                       
+                        <div class="transit-timeline">
+                            {% for pt in transit_points %}
+                                <div class="timeline-item {{ pt.state }}">
+                                    <div class="node">
+                                        {% if pt.state == 'completed' %}
+                                            <i class="fa-solid fa-check" style="font-size: 8px; color: white;"></i>
+                                        {% elif pt.state == 'current' %}
+                                            <i class="fa-solid fa-circle" style="font-size: 6px; color: white;"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="content">
+                                        <h4>{{ pt.status }}</h4>
+                                        <p>{{ pt.location_name }}</p>
+                                        <p style="font-size: 10px; color: #475569; margin-top: 1px;">
+                                            Timestamp: {{ pt.time }} | Operator: {{ pt.operator }}
+                                        </p>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+
+                </div>
+
+
+            </div>
+        {% else %}
+            <!-- Warning display if no exam matches search parameters -->
+            <div class="map-panel" style="margin-top: 20px; text-align: center; padding: 50px;">
+                <i class="fa-solid fa-triangle-exclamation" style="font-size: 48px; color: #fbbf24; margin-bottom: 20px;"></i>
+                <h2>No Active Dispatch Track Found</h2>
+                <p style="color:#94a3b8; font-size:14px;">Select an active examination code from the dropdown panel above to trace transit telemetry logs.</p>
+            </div>
+        {% endif %}
+
+
+    </div>
+
+
+    <!-- Leaflet.js library for drawing tiles -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+
+    <!-- Injects route data safely as JSON payload for JS mapper -->
+    {% if exam %}
+        <script>
+            const TRACKING_ROUTE_DATA = {{ route_data | tojson | safe }};
+        </script>
+    {% endif %}
+
+
+    <!-- Link to tracking logic script -->
+    <script src="{{ url_for('static', filename='js/tracking.js') }}"></script>
+</body>
+
+
+</html>

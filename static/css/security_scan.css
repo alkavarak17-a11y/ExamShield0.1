@@ -1,0 +1,283 @@
+/* ==========================================
+   EXAMSHIELD - AI SECURITY ENGINE STYLES
+   ========================================== */
+
+
+/* Split layout containers */
+.scan-container {
+    display: grid;
+    grid-template-columns: 0.9fr 1.1fr;
+    gap: 30px;
+    margin-top: 20px;
+}
+
+
+/* Left panel: Radar Sweep Console */
+.radar-panel {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    padding: 30px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+
+.radar-panel h2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 25px;
+    color: #3b82f6;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    align-self: flex-start;
+}
+
+
+/* Rotating Sweep Radar Graphic */
+.radar-wrapper {
+    position: relative;
+    width: 260px;
+    height: 260px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.05) 0%, rgba(16, 185, 129, 0.15) 70%, rgba(16, 185, 129, 0.25) 100%);
+    border: 2px solid rgba(16, 185, 129, 0.3);
+    margin: 20px 0 35px;
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+
+.radar-wrapper::before {
+    content: '';
+    position: absolute;
+    width: 70%;
+    height: 70%;
+    border-radius: 50%;
+    border: 1.5px dashed rgba(16, 185, 129, 0.2);
+}
+
+
+.radar-wrapper::after {
+    content: '';
+    position: absolute;
+    width: 40%;
+    height: 40%;
+    border-radius: 50%;
+    border: 1px dashed rgba(16, 185, 129, 0.25);
+}
+
+
+/* Glowing Sweep Line */
+.radar-sweep {
+    position: absolute;
+    width: 50%;
+    height: 50%;
+    top: 0;
+    left: 50%;
+    background: linear-gradient(90deg, rgba(16, 185, 129, 0.4) 0%, rgba(16, 185, 129, 0) 100%);
+    transform-origin: bottom left;
+    border-left: 2px solid rgba(16, 185, 129, 0.8);
+    display: none; /* activated via active class in JS */
+}
+
+
+.radar-wrapper.scanning .radar-sweep {
+    display: block;
+    animation: rotateSweep 2s infinite linear;
+}
+
+
+.radar-center {
+    width: 8px;
+    height: 8px;
+    background: #10b981;
+    border-radius: 50%;
+    z-index: 5;
+    box-shadow: 0 0 10px #10b981;
+}
+
+
+/* AI Trigger action buttons */
+.scan-actions {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+
+.scan-btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+
+
+.scan-btn.start-btn {
+    background: #10b981;
+    color: white;
+}
+
+
+.scan-btn.start-btn:hover {
+    background: #059669;
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+    transform: translateY(-1px);
+}
+
+
+.scan-btn.continue-btn {
+    background: #2563eb;
+    color: white;
+    text-decoration: none;
+}
+
+
+.scan-btn.continue-btn:hover {
+    background: #1d4ed8;
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.3);
+    transform: translateY(-1px);
+}
+
+
+/* Right panel: Monospaced Diagnostic Terminal */
+.terminal-panel {
+    background: #020617;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    padding: 25px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    height: 500px;
+}
+
+
+.terminal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 12px;
+    margin-bottom: 15px;
+}
+
+
+.terminal-header .title {
+    font-size: 13px;
+    color: #94a3b8;
+    font-family: monospace;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+
+.terminal-header .dots {
+    display: flex;
+    gap: 6px;
+}
+
+
+.terminal-header .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+
+.terminal-header .dot.red { background: #ef4444; }
+.terminal-header .dot.yellow { background: #f59e0b; }
+.terminal-header .dot.green { background: #10b981; }
+
+
+.terminal-body {
+    flex: 1;
+    overflow-y: auto;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    color: #10b981;
+    text-align: left;
+    padding-right: 10px;
+}
+
+
+/* Terminal Log Lines formatting */
+.log-line {
+    margin-bottom: 8px;
+    word-break: break-all;
+    opacity: 0.9;
+}
+
+
+.log-line.info { color: #10b981; }
+.log-line.warn { color: #f59e0b; }
+.log-line.success { color: #60a5fa; font-weight: bold; }
+.log-line.error { color: #ef4444; font-weight: bold; }
+
+
+/* Integrity scorecard results overlay */
+.score-display {
+    display: none; /* activated via active class in JS */
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+
+.score-display .circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 5px solid #10b981;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 28px;
+    font-weight: 700;
+    color: #10b981;
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+}
+
+
+/* Keyframes animations */
+@keyframes rotateSweep {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+
+/* Responsive grid alignments */
+@media(max-width: 900px) {
+    .scan-container {
+        grid-template-columns: 1fr;
+    }
+    .terminal-panel {
+        height: 350px;
+    }
+}

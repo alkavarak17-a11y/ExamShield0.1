@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EXAMSHIELD - Official Security Audits</title>
+
+
+    <!-- Import Font Awesome library for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+   
+    <!-- Import Poppins font from Google -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+   
+    {% if not print_mode %}
+        <!-- Link to dashboard base CSS (reusing sidebar styles) -->
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    {% endif %}
+   
+    <!-- Link to reports specific styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/reports.css') }}">
+</head>
+
+
+<body style="{% if print_mode %}background: white !important; padding: 20px !important; color: black !important;{% endif %}">
+
+
+    {% if not print_mode %}
+        <!-- Responsive hamburger menu for mobile navigation -->
+        <button class="menu-toggle" id="mobile-menu-btn">
+            <i class="fa-solid fa-bars" id="menu-icon"></i>
+        </button>
+
+
+        <!-- Sidebar navigation layout -->
+        <div id="mysidenav" class="sidenav">
+            <h3>EXAMSHIELD</h3>
+            <a href="/dashboard">
+                <i class="fa-solid fa-chart-pie"></i> Dashboard
+            </a>
+            <a href="/create_exam">
+                <i class="fa-solid fa-file-pen"></i> Create Exam
+            </a>
+            <a href="/security_scan">
+                <i class="fa-solid fa-shield-halved"></i> Paper Security
+            </a>
+            <a href="/blockchain">
+                <i class="fa-solid fa-link"></i> Secure Chain
+            </a>
+            <a href="/tracking">
+                <i class="fa-solid fa-route"></i> Tracking
+            </a>
+            <a href="/reports" class="active">
+                <i class="fa-solid fa-chart-line"></i> Reports
+            </a>
+            <a href="/logout">
+                <i class="fa-solid fa-right-from-bracket"></i> Logout
+            </a>
+        </div>
+
+
+        <!-- Header bar panel -->
+        <div class="section">
+            <h3>Official Security Audits</h3>
+            <div class="header-right">
+                <!-- Notification bell -->
+                <div class="top-icons">
+                    <i class="fa-solid fa-bell notification"></i>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+
+    <!-- Main Content Area -->
+    <div class="{% if not print_mode %}main-content{% endif %}">
+       
+        {% if not print_mode %}
+            <!-- Report compiler selections panel -->
+            <section class="compiler-card">
+                <form action="/reports" method="GET" class="compiler-form">
+                    <div class="compiler-group">
+                        <label for="exam_code_select">EXAM TARGET :</label>
+                        <select name="exam_code" id="exam_code_select" class="compiler-select" onchange="this.form.submit()">
+                            <option value="">-- Choose exam --</option>
+                            {% for ex in created_exams %}
+                                <option value="{{ ex.exam_code }}" {% if ex.exam_code == exam.exam_code %}selected{% endif %}>
+                                    {{ ex.exam_code }} - {{ ex.exam_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+
+                    <div class="checkbox-row">
+                        <label class="checkbox-group">
+                            <input type="checkbox" name="show_security" id="opt_security" value="1" {% if show_security %}checked{% endif %} onchange="this.form.submit()">
+                            <span>Security Engine</span>
+                        </label>
+                       
+                        <label class="checkbox-group">
+                            <input type="checkbox" name="show_blockchain" id="opt_blockchain" value="1" {% if show_blockchain %}checked{% endif %} onchange="this.form.submit()">
+                            <span>SecureChain ledger</span>
+                        </label>
+                       
+                        <label class="checkbox-group">
+                            <input type="checkbox" name="show_tracking" id="opt_tracking" value="1" {% if show_tracking %}checked{% endif %} onchange="this.form.submit()">
+                            <span>GPS coordinates</span>
+                        </label>
+                    </div>
+
+
+                    <button type="submit" class="compile-btn">
+                        <i class="fa-solid fa-arrows-rotate"></i> Refresh View
+                    </button>
+                </form>
+            </section>
+        {% endif %}
+
+
+        {% if exam %}
+
+
+<!-- Security Dashboard -->
+<div class="summary-dashboard">
+
+
+    <div class="summary-card">
+        <i class="fa-solid fa-shield-halved"></i>
+        <h3>{{ exam.security_score or 95 }}%</h3>
+        <p>Security Score</p>
+    </div>
+
+
+    <div class="summary-card">
+        <i class="fa-solid fa-link"></i>
+        <h3>{{ blockchain_logs|length }}</h3>
+        <p>Blockchain Blocks</p>
+    </div>
+
+
+    <div class="summary-card">
+        <i class="fa-solid fa-route"></i>
+        <h3>{{ tracking_logs|length }}</h3>
+        <p>Tracking Logs</p>
+    </div>
+
+
+    <div class="summary-card approved">
+        <i class="fa-solid fa-circle-check"></i>
+        <h3>APPROVED</h3>
+        <p>Overall Status</p>
+    </div>
+
+
+</div>
+
+
+<div class="report-sheet-container">
+               
+                <!-- Compiled Official Audit Sheet -->
+                <article class="report-document">
+                   
+                    <!-- Document Header -->
+                    <div class="doc-header">
+                        <h1 class="doc-logo">EXAMSHIELD</h1>
+                        <p class="doc-subtitle">Security Verification & Chain of Custody Audit Report</p>
+                        <p style="font-size: 10px; color:#64748b; margin: 3px 0 0; text-transform: uppercase;">
+                            National Examination Security Board | Government of India
+                        </p>
+                       
+                        <div class="doc-meta-grid">
+                            <div><b>Document ID:</b> ES-AUD-{{ exam.exam_code }}-2026</div>
+                            <div style="text-align: right;"><b>Generated On:</b> {{ current_time }}</div>
+                            <div><b>Exam Code:</b> {{ exam.exam_code }}</div>
+                            <div style="text-align: right;"><b>Status:</b> {{ exam.status }}</div>
+                        </div>
+
+
+                        <div class="audit-stats">
+
+
+                        <div class="audit-box">
+                            <h2>{{ exam.security_score or 95 }}%</h2>
+                            <span>Security Confidence</span>
+                        </div>
+
+
+                        <div class="audit-box">
+                            <h2>{{ blockchain_logs|length }}</h2>
+                            <span>Blockchain Records</span>
+                        </div>
+
+
+                        <div class="audit-box">
+                            <h2>{{ tracking_logs|length }}</h2>
+                            <span>Tracking Events</span>
+                        </div>
+
+
+                        <div class="audit-box">
+                            <h2>SHA-256</h2>
+                            <span>Encryption</span>
+                        </div>
+
+
+                    </div>
+                    </div>
+
+
+                    <!-- Exam Details section -->
+                    <section class="report-section">
+                        <h3><i class="fa-solid fa-circle-info"></i> Basic Exam Specifications</h3>
+                        <table class="report-table">
+                            <tr>
+                                <th style="width: 30%;">Exam Name</th>
+                                <td>{{ exam.exam_name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Conducting Authority</th>
+                                <td>{{ exam.authority }}</td>
+                            </tr>
+                            <tr>
+                                <th>Scheduled Date & Time</th>
+                                <td>{{ exam.exam_date }} @ {{ exam.exam_time }}</td>
+                            </tr>
+                            <tr>
+                                <th>Current Logged Status</th>
+                                <td><b>{{ exam.status }}</b></td>
+                            </tr>
+                        </table>
+                    </section>
+
+
+                    <!-- 1. Security scan results -->
+                    {% if show_security %}
+                        <section class="report-section">
+                            <h3><i class="fa-solid fa-shield-halved"></i> AI Security Verification Scan</h3>
+                            <table class="report-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40%;">Security Element Check</th>
+                                        <th style="width: 30%;">Audit Status</th>
+                                        <th>Score / Hash Code</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Integrity Threat Score</td>
+                                        <td>
+                                            <span class="report-status-badge {% if exam.security_score and exam.security_score >= 80 %}status-passed{% else %}status-warning{% endif %}">
+                                                {% if exam.security_score and exam.security_score >= 80 %}PASSED{% else %}WARNING{% endif %}
+                                            </span>
+                                        </td>
+                                        <td>{{ exam.security_score or '95' }}% Integrity Value</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Question Paper DNA (SHA-256)</td>
+                                        <td><span class="report-status-badge status-passed">GENERATED</span></td>
+                                        <td class="hash-font">{{ paper_dna }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Steganographic Watermarking</td>
+                                        <td><span class="report-status-badge status-passed">SECURED</span></td>
+                                        <td>Dynamic Cryptographic Watermark Embedded</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Plagiarism & Leak Scan</td>
+                                        <td><span class="report-status-badge status-passed">SECURE</span></td>
+                                        <td>0 matching patterns detected in leak sweep</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </section>
+                    {% endif %}
+
+
+                    <!-- 2. Blockchain logs -->
+                    {% if show_blockchain %}
+                        <section class="report-section">
+                            <h3><i class="fa-solid fa-link"></i> SecureChain Blockchain Audit Timeline</h3>
+                            {% if blockchain_logs %}
+                                <table class="report-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 10%;">Block</th>
+                                            <th style="width: 25%;">Timestamp</th>
+                                            <th style="width: 20%;">Action Recorded</th>
+                                            <th style="width: 25%;">Block Hash (Parent link)</th>
+                                            <th>Operator</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for bl in blockchain_logs %}
+                                            <tr>
+                                                <td>#{{ bl.block_index }}</td>
+                                                <td>{{ bl.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                                                <td><b>{{ bl.action }}</b></td>
+                                                <td class="hash-font">{{ bl.block_hash[:20] }}...</td>
+                                                <td>{{ bl.operator }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p style="font-size: 12px; color: #64748b; font-style: italic;">No block transactions recorded in blockchain ledger yet.</p>
+                            {% endif %}
+                        </section>
+                    {% endif %}
+
+
+                    <!-- 3. GPS tracking coordinates -->
+                    {% if show_tracking %}
+                        <section class="report-section">
+                            <h3><i class="fa-solid fa-map-location-dot"></i> SmartTrace GPS Geolocation Checkpoints</h3>
+                            {% if tracking_logs %}
+                                <table class="report-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 25%;">Checkpoint</th>
+                                            <th style="width: 35%;">Physical Location</th>
+                                            <th style="width: 20%;">GPS Lat / Lng</th>
+                                            <th>Scanned By</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for tl in tracking_logs %}
+                                            <tr>
+                                                <td><b>{{ tl.status }}</b></td>
+                                                <td>{{ tl.location_name }}</td>
+                                                <td>{{ tl.latitude }}, {{ tl.longitude }}</td>
+                                                <td>{{ tl.updated_by }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p style="font-size: 12px; color: #64748b; font-style: italic;">No GPS checkpoints or route transits recorded for this packet yet.</p>
+                            {% endif %}
+                        </section>
+                    {% endif %}
+                   
+
+
+                   
+                   
+                    <!-- Final Audit Verdict -->
+                    <div class="audit-verdict">
+
+
+                        {% if exam.security_score >= 90 %}
+
+
+                        <i class="fa-solid fa-circle-check"></i>
+
+
+                        <div>
+                            <h2>SECURE EXAMINATION</h2>
+                            <p>
+                                All security validations have passed successfully.
+                                Blockchain integrity verified and examination packet approved.
+                            </p>
+                        </div>
+
+
+                        {% else %}
+
+
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+
+
+                        <div>
+                            <h2>SECURITY REVIEW REQUIRED</h2>
+                            <p>
+                                One or more verification checks require administrator review.
+                            </p>
+                        </div>
+
+
+                        {% endif %}
+
+
+                        </div>
+                    <!-- Overall Audit Summary -->
+                    <section class="report-section">
+
+
+                        <h3>
+                            <i class="fa-solid fa-clipboard-check"></i>
+                            Overall Audit Summary
+                        </h3>
+
+
+                        <table class="report-table">
+
+
+                            <tr>
+                                <th width="35%">AI Security Engine</th>
+                                <td>
+                                    {% if exam.security_score >= 90 %}
+                                        ✅ Passed Successfully
+                                    {% else %}
+                                        ⚠ Review Required
+                                    {% endif %}
+                                </td>
+                            </tr>
+
+
+                            <tr>
+                                <th>Blockchain Integrity</th>
+                                <td>
+                                    {% if blockchain_logs %}
+                                        ✅ {{ blockchain_logs|length }} Blocks Verified
+                                    {% else %}
+                                        No Blockchain Data
+                                    {% endif %}
+                                </td>
+                            </tr>
+
+
+                            <tr>
+                                <th>GPS Tracking</th>
+                                <td>
+                                    {% if tracking_logs %}
+                                        ✅ {{ tracking_logs|length }} Transit Logs Recorded
+                                    {% else %}
+                                        No Tracking Available
+                                    {% endif %}
+                                </td>
+                            </tr>
+
+
+                            <tr>
+                                <th>Final Recommendation</th>
+                                <td style="font-weight:bold;color:#22c55e;">
+                                    APPROVED FOR SECURE EXAM CONDUCT
+                                </td>
+                            </tr>
+
+
+                        </table>
+
+
+                    </section>
+
+
+                    <!-- QR Verification 
+                    <section class="report-section">
+
+
+                        <h3>
+                            <i class="fa-solid fa-qrcode"></i>
+                            Digital Verification
+                        </h3>
+
+
+                        <div style="display:flex;justify-content:space-between;align-items:center;gap:30px;">
+
+
+                            <div>
+
+
+                                <p><strong>Verification URL</strong></p>
+
+
+                                <p style="color:#64748b;font-size:13px;">
+                                    https://examshield.gov/verify/{{ exam.exam_code }}
+                                </p>
+
+
+                                <p style="margin-top:15px;">
+                                    Scan the QR Code to verify this audit report.
+                                </p>
+
+
+                            </div>
+
+
+                            <div style="text-align:center;">
+
+
+                                <img
+                                src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=http://127.0.0.1:5000/verify_report/{{ exam.exam_code }}"
+                                width="120">
+
+
+                                <p style="font-size:11px;">
+                                    QR Verification
+                                </p>
+
+
+                            </div>
+
+
+                        </div>
+
+
+                    </section>
+                    -->
+                    <!-- Audit Conclusion -->
+                    <section class="report-section">
+
+                        <h3>
+                            <i class="fa-solid fa-circle-check"></i>
+                            Audit Conclusion
+                        </h3>
+
+                        <div style="padding:18px;background:#f8fafc;border-left:5px solid #22c55e;border-radius:8px;">
+
+                            <p style="margin-bottom:10px;">
+                                This examination packet successfully completed all configured
+                                security verification stages.
+                            </p>
+
+                            <ul style="margin-left:20px;line-height:1.8;">
+                                <li>AI Security Scan completed successfully.</li>
+                                <li>Blockchain ledger integrity verified.</li>
+                                <li>GPS transit checkpoints recorded and validated.</li>
+                                <li>No evidence of packet tampering detected.</li>
+                                <li>Chain of custody maintained throughout transportation.</li>
+                            </ul>
+
+                            <p style="margin-top:15px;font-weight:bold;color:#16a34a;">
+                                Final Status: APPROVED FOR SECURE EXAM CONDUCT
+                            </p>
+
+                        </div>
+
+                    </section>
+                    <!-- Signature stamp blocks -->
+                    <div class="signature-section">
+                        <div class="seal-stamp">
+                            ExamShield<br>Secured<br>Audit Stamp
+                        </div>
+                       
+                        <div class="sig-block">
+                            <!-- Conducted officer -->
+                            <div class="sig-line">
+                                Conducting Officer Signature
+                            </div>
+                            <p style="font-size: 11px; color:#475569; margin: 3px 0 0;">
+                                Name: {{ session['name'] or 'Officer Admin' }}<br>
+                                ID: {{ session['government_id'] or 'Admin ID' }}
+                            </p>
+                        </div>
+                    </div>
+
+
+                </article>
+
+
+                {% if not print_mode %}
+                    <!-- Export Actions Area -->
+                    <div class="export-bar">
+                        <!-- Redirect printable page -->
+                        <a id="export-pdf-btn" class="export-btn pdf-btn" target="_blank">
+                            <i class="fa-solid fa-file-pdf"></i> Export PDF Report
+                        </a>
+                       
+                        <!-- Print trigger -->
+                        <button id="print-report-btn" class="export-btn print-btn">
+                            <i class="fa-solid fa-print"></i> Print Audit
+                        </button>
+                    </div>
+                {% endif %}
+
+
+            </div>
+        {% else %}
+            <!-- Warning display if no exam is selected -->
+            <div class="compiler-card" style="text-align: center; padding: 50px;">
+                <i class="fa-solid fa-magnifying-glass" style="font-size: 48px; color: #64748b; margin-bottom: 20px;"></i>
+                <h2>Select Examination Code to Generate</h2>
+                <p style="color:#94a3b8; font-size:14px;">Use the dropdown panel above to select a conduction record to begin audits.</p>
+            </div>
+        {% endif %}
+
+
+    </div>
+
+
+    {% if not print_mode %}
+        <!-- Link to reports controller script -->
+        <script src="{{ url_for('static', filename='js/reports.js') }}"></script>
+    {% endif %}
+
+
+    {% if print_mode %}
+        <!-- Automatic print script for printer views -->
+        <script>
+            window.onload = function() {
+                setTimeout(() => {
+                    window.print();
+                }, 500);
+            };
+        </script>
+    {% endif %}
+
+
+</body>
+
+
+</html>

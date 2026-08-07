@@ -1,0 +1,373 @@
+/* ==========================================
+   EXAMSHIELD - CREATE EXAMINATION STYLES
+   ========================================== */
+
+/* Step wizard indicator styling */
+.progress-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 20px;
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    position: relative;
+}
+
+.step span {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #1e293b;
+    border: 2px solid #334155;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 700;
+    color: #94a3b8;
+    transition: all 0.3s;
+}
+
+.step.active span {
+    background: #2563eb;
+    border-color: #3b82f6;
+    color: white;
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.5);
+}
+
+.step.completed span {
+    background: #10b981;
+    border-color: #10b981;
+    color: white;
+}
+
+.step p {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.step.active p {
+    color: #3b82f6;
+    font-weight: 600;
+}
+
+.line {
+    height: 2px;
+    background: #1e293b;
+    flex: 1;
+    margin: 0 15px;
+}
+
+.line.active {
+    background: #2563eb;
+}
+
+/* Glassmorphism Form container card */
+.form-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    padding: 35px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35);
+}
+
+.form-card h2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 25px;
+    color: #3b82f6;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 15px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 25px;
+    margin-bottom: 30px;
+}
+
+/* Inputs, Selects, and Labels */
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    margin-bottom: 8px;
+    color: #94a3b8;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.form-group input,
+.form-group select {
+    padding: 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #1e293b;
+    color: white;
+    outline: none;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+}
+
+.form-group input[readonly] {
+    background: #0f172a;
+    border-color: rgba(255, 255, 255, 0.05);
+    color: #64748b;
+    cursor: not-allowed;
+}
+
+/* Security Configuration Cards grid */
+.security-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+.security-card h2 {
+    font-size: 16px;
+    color: #f8fafc;
+    border: none;
+    padding-bottom: 0;
+    margin-bottom: 20px;
+}
+
+.security-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+.checkbox-card {
+    background: #1e293b;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.checkbox-card:hover {
+    border-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.checkbox-card input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #3b82f6;
+}
+
+.checkbox-card span {
+    font-size: 13px;
+    color: #cbd5e1;
+    font-weight: 500;
+}
+
+/* Upload Section Placeholder */
+.upload-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.upload-card h2 {
+    font-size: 16px;
+    color: #cbd5e1;
+    border: none;
+    padding-bottom: 0;
+    margin-bottom: 15px;
+    justify-content: center;
+}
+
+.upload-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.upload-area i {
+    font-size: 36px;
+    color: #64748b;
+}
+
+.upload-area h3 {
+    font-size: 14px;
+    color: #94a3b8;
+}
+
+.upload-area p {
+    font-size: 12px;
+    color: #475569;
+}
+
+/* Additional settings block */
+.additional-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+.additional-card h2 {
+    font-size: 16px;
+    color: #f8fafc;
+    border: none;
+    padding-bottom: 0;
+    margin-bottom: 20px;
+}
+
+/* Security readiness checklist */
+.status-card {
+    background: rgba(16, 185, 129, 0.05);
+    border: 1px solid rgba(16, 185, 129, 0.15);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 35px;
+}
+
+.status-card h2 {
+    font-size: 15px;
+    color: #10b981;
+    border: none;
+    padding-bottom: 0;
+    margin-bottom: 15px;
+}
+
+.status-list {
+    display: flex;
+    gap: 25px;
+    flex-wrap: wrap;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #cbd5e1;
+    font-weight: 500;
+}
+
+.status-item i {
+    color: #10b981;
+}
+
+/* Action button groupings */
+.button-group {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding-top: 25px;
+}
+
+.button-group button {
+    padding: 14px 28px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.cancel-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #94a3b8;
+}
+
+.cancel-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+}
+
+.draft-btn {
+    background: #1e293b;
+    color: #cbd5e1;
+}
+
+.draft-btn:hover {
+    background: #334155;
+    color: white;
+}
+
+.continue-btn {
+    background: #2563eb;
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.continue-btn:hover {
+    background: #1d4ed8;
+    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+}
+
+/* ================= RESPONSIVE LAYOUTS ================= */
+@media(max-width: 1024px) {
+    .security-options {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media(max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    .progress-wrapper {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+    .line {
+        display: none;
+    }
+}
+
+@media(max-width: 480px) {
+    .security-options {
+        grid-template-columns: 1fr;
+    }
+    .button-group {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+}
