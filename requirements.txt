@@ -5,3 +5,4 @@ bcrypt==4.2.0
 gunicorn
 pypdf
 python-dotenv
+google-generativeai
