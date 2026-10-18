@@ -247,6 +247,12 @@ def ensure_database_schema():
     except Exception as e:
         print(f"[DATABASE NOTICE] Schema check notice: {e}")
 
+# Automatically ensure database schema on app load (works for both Gunicorn and local run)
+try:
+    ensure_database_schema()
+except Exception as _init_err:
+    print(f"[DATABASE NOTICE] Initial schema check deferred: {_init_err}")
+
 
 # SMTP configurations for secure email OTP delivery
 SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
