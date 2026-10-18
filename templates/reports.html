@@ -55,6 +55,9 @@
             <a href="/reports" class="active">
                 <i class="fa-solid fa-chart-line"></i> Reports
             </a>
+            <a href="/qr">
+                <i class="fa-solid fa-qrcode"></i> QR Certificate
+            </a>
             <a href="/logout">
                 <i class="fa-solid fa-right-from-bracket"></i> Logout
             </a>
@@ -148,9 +151,9 @@
     </div>
 
 
-    <div class="summary-card approved">
-        <i class="fa-solid fa-circle-check"></i>
-        <h3>APPROVED</h3>
+    <div class="summary-card {{ evaluation.overall_badge }}">
+        <i class="fa-solid {% if evaluation.is_approved %}fa-circle-check{% elif evaluation.overall_badge == 'review-required' %}fa-triangle-exclamation{% else %}fa-circle-exclamation{% endif %}"></i>
+        <h3>{{ evaluation.overall_status }}</h3>
         <p>Overall Status</p>
     </div>
 
@@ -168,7 +171,7 @@
                         <h1 class="doc-logo">EXAMSHIELD</h1>
                         <p class="doc-subtitle">Security Verification & Chain of Custody Audit Report</p>
                         <p style="font-size: 10px; color:#64748b; margin: 3px 0 0; text-transform: uppercase;">
-                            National Examination Security Board | Government of India
+                            ExamShield Secure Examination Portal | Institutional Audit Authority
                         </p>
                        
                         <div class="doc-meta-grid">
@@ -397,45 +400,41 @@
 
 
                             <tr>
-                                <th width="35%">AI Security Engine</th>
+                                <th width="35%">Paper DNA Cryptographic Hash</th>
                                 <td>
-                                    {% if exam.security_score >= 90 %}
-                                        ✅ Passed Successfully
-                                    {% else %}
-                                        ⚠ Review Required
-                                    {% endif %}
+                                    {{ evaluation.paper_check.text }}
                                 </td>
                             </tr>
 
 
                             <tr>
-                                <th>Blockchain Integrity</th>
+                                <th>AI Security Engine</th>
                                 <td>
-                                    {% if blockchain_logs %}
-                                        ✅ {{ blockchain_logs|length }} Blocks Verified
-                                    {% else %}
-                                        No Blockchain Data
-                                    {% endif %}
+                                    {{ evaluation.scan_check.text }}
                                 </td>
                             </tr>
 
 
                             <tr>
-                                <th>GPS Tracking</th>
+                                <th>Blockchain Audit Ledger</th>
                                 <td>
-                                    {% if tracking_logs %}
-                                        ✅ {{ tracking_logs|length }} Transit Logs Recorded
-                                    {% else %}
-                                        No Tracking Available
-                                    {% endif %}
+                                    {{ evaluation.ledger_check.text }}
+                                </td>
+                            </tr>
+
+
+                            <tr>
+                                <th>GPS Transit Tracking</th>
+                                <td>
+                                    {{ evaluation.tracking_check.text }}
                                 </td>
                             </tr>
 
 
                             <tr>
                                 <th>Final Recommendation</th>
-                                <td style="font-weight:bold;color:#22c55e;">
-                                    APPROVED FOR SECURE EXAM CONDUCT
+                                <td style="font-weight:bold;color:{{ evaluation.recommendation_color }};">
+                                    {{ evaluation.recommendation }}
                                 </td>
                             </tr>
 
@@ -446,84 +445,32 @@
                     </section>
 
 
-                    <!-- QR Verification 
-                    <section class="report-section">
-
-
-                        <h3>
-                            <i class="fa-solid fa-qrcode"></i>
-                            Digital Verification
-                        </h3>
-
-
-                        <div style="display:flex;justify-content:space-between;align-items:center;gap:30px;">
-
-
-                            <div>
-
-
-                                <p><strong>Verification URL</strong></p>
-
-
-                                <p style="color:#64748b;font-size:13px;">
-                                    https://examshield.gov/verify/{{ exam.exam_code }}
-                                </p>
-
-
-                                <p style="margin-top:15px;">
-                                    Scan the QR Code to verify this audit report.
-                                </p>
-
-
-                            </div>
-
-
-                            <div style="text-align:center;">
-
-
-                                <img
-                                src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=http://127.0.0.1:5000/verify_report/{{ exam.exam_code }}"
-                                width="120">
-
-
-                                <p style="font-size:11px;">
-                                    QR Verification
-                                </p>
-
-
-                            </div>
-
-
-                        </div>
-
-
-                    </section>
-                    -->
-                    <!-- Audit Conclusion -->
+                    <!-- Audit Conclusion & Compliance Evaluation -->
                     <section class="report-section">
 
                         <h3>
-                            <i class="fa-solid fa-circle-check"></i>
-                            Audit Conclusion
+                            <i class="fa-solid {% if evaluation.is_approved %}fa-circle-check{% else %}fa-shield-halved{% endif %}"></i>
+                            Audit Conclusion & Compliance Evaluation
                         </h3>
 
-                        <div style="padding:18px;background:#f8fafc;border-left:5px solid #22c55e;border-radius:8px;">
+                        <div style="padding:18px;background:#f8fafc;border-left:5px solid {{ evaluation.recommendation_color }};border-radius:8px;">
 
-                            <p style="margin-bottom:10px;">
-                                This examination packet successfully completed all configured
-                                security verification stages.
+                            <p style="margin-bottom:8px; font-weight:700; color:#0f172a; font-size:15px;">
+                                {{ evaluation.verdict_title }}
                             </p>
 
-                            <ul style="margin-left:20px;line-height:1.8;">
-                                <li>AI Security Scan completed successfully.</li>
-                                <li>Blockchain ledger integrity verified.</li>
-                                <li>GPS transit checkpoints recorded and validated.</li>
-                                <li>No evidence of packet tampering detected.</li>
-                                <li>Chain of custody maintained throughout transportation.</li>
+                            <p style="margin-bottom:12px; font-size:13px; color:#475569;">
+                                {{ evaluation.verdict_desc }}
+                            </p>
+
+                            <ul style="margin-left:20px;line-height:1.8; font-size:13px; color:#334155;">
+                                {% for reason in evaluation.reasons %}
+                                    <li>{{ reason }}</li>
+                                {% endfor %}
                             </ul>
 
-                            <p style="margin-top:15px;font-weight:bold;color:#16a34a;">
-                                Final Status: APPROVED FOR SECURE EXAM CONDUCT
+                            <p style="margin-top:15px;font-weight:bold;color:{{ evaluation.recommendation_color }}; font-size:14px;">
+                                Formal Recommendation: {{ evaluation.recommendation }}
                             </p>
 
                         </div>

@@ -32,113 +32,124 @@ document.addEventListener("DOMContentLoaded", () => {
     const downloadBtn = document.getElementById("download-qr-btn");
     const printBtn = document.getElementById("print-qr-btn");
 
-
-    if (qrOutput && typeof EXAM_QR_PAYLOAD !== 'undefined') {
+    function isValidVerificationUrl(url) {
+        if (!url || typeof url !== 'string') return false;
+        const trimmed = url.trim();
+        if (
+            trimmed === "" ||
+            trimmed === "null" ||
+            trimmed.startsWith("null/") ||
+            trimmed.startsWith("http://null") ||
+            trimmed.startsWith("https://null") ||
+            trimmed.includes("://null")
+        ) {
+            return false;
+        }
         try {
-            // Check if QRCode library loaded correctly from CDN
-            if (typeof QRCode !== 'undefined') {
-                // Initialize QR Code inside container
-                const qrcode = new QRCode(qrOutput, {
-                    text: EXAM_QR_PAYLOAD,
-                    width: 190,
-                    height: 190,
-                    colorDark: "#000000",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.M
-                });
+            const parsed = new URL(trimmed);
+            return parsed.protocol === "http:" || parsed.protocol === "https:";
+        } catch (e) {
+            return false;
+        }
+    }
 
+    if (qrOutput) {
+        const payload = (typeof EXAM_QR_PAYLOAD !== 'undefined') ? EXAM_QR_PAYLOAD : "";
 
-                // Wait briefly for canvas/image to construct, then bind data url to download link
-                setTimeout(() => {
-                    const canvas = qrOutput.querySelector("canvas");
-                    const img = qrOutput.querySelector("img");
+        if (!isValidVerificationUrl(payload)) {
+            qrOutput.innerHTML = `
+                <div style="color: #ef4444; font-size: 13px; text-align: center; padding: 25px 15px;">
+                    <i class="fa-solid fa-triangle-exclamation" style="font-size: 32px; margin-bottom: 10px; display: block;"></i>
+                    <div style="font-weight: 600;">Invalid QR Target URL</div>
+                    <div style="font-size: 11px; color: #94a3b8; margin-top: 6px; line-height: 1.4;">
+                        Reachable verification URL could not be resolved. Please verify host and network settings.
+                    </div>
+                </div>
+            `;
+            if (downloadBtn) {
+                downloadBtn.style.pointerEvents = "none";
+                downloadBtn.style.opacity = "0.5";
+            }
+        } else {
+            try {
+                // Check if QRCode library loaded correctly from CDN or local bundle
+                if (typeof QRCode !== 'undefined') {
+                    qrOutput.innerHTML = ""; // Clear loader text before drawing QR code
+                    
+                    // Initialize QR Code inside container
+                    const qrcode = new QRCode(qrOutput, {
+                        text: payload,
+                        width: 190,
+                        height: 190,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.M
+                    });
 
+                    // Wait briefly for canvas/image to construct, then bind data url to download link
+                    setTimeout(() => {
+                        const canvas = qrOutput.querySelector("canvas");
+                        const img = qrOutput.querySelector("img");
 
-                    if (canvas && downloadBtn) {
+                        if (canvas && downloadBtn) {
+                            const labelCanvas = document.createElement("canvas");
+                            labelCanvas.width = 500;
+                            labelCanvas.height = 650;
+                            const ctx = labelCanvas.getContext("2d");
 
+                            // Background
+                            ctx.fillStyle = "#ffffff";
+                            ctx.fillRect(0, 0, 500, 650);
 
-                    const labelCanvas = document.createElement("canvas");
-                    labelCanvas.width = 500;
-                    labelCanvas.height = 650;
+                            // Title
+                            ctx.fillStyle = "#111827";
+                            ctx.font = "bold 28px Arial";
+                            ctx.fillText("EXAMSHIELD", 140, 50);
 
+                            ctx.font = "18px Arial";
+                            ctx.fillStyle = "#2563eb";
+                            ctx.fillText("Secure Examination QR Label", 95, 80);
 
-                    const ctx = labelCanvas.getContext("2d");
+                            // QR
+                            ctx.drawImage(canvas, 155, 110, 190, 190);
 
+                            // Details
+                            ctx.fillStyle = "#111";
+                            ctx.font = "18px Arial";
 
-                    // Background
-                    ctx.fillStyle = "#ffffff";
-                    ctx.fillRect(0,0,500,650);
+                            const codeVal = document.getElementById("examCode") ? document.getElementById("examCode").value : "";
+                            const authVal = document.getElementById("examAuthority") ? document.getElementById("examAuthority").value : "";
+                            const statVal = document.getElementById("examStatus") ? document.getElementById("examStatus").value : "";
 
+                            ctx.fillText("Exam Code : " + codeVal, 50, 350);
+                            ctx.fillText("Authority : " + authVal, 50, 390);
+                            ctx.fillText("Status : " + statVal, 50, 430);
 
-                    // Title
-                    ctx.fillStyle="#111827";
-                    ctx.font="bold 28px Arial";
-                    ctx.fillText("EXAMSHIELD",140,50);
+                            ctx.font = "14px Arial";
+                            ctx.fillStyle = "#475569";
+                            ctx.fillText("Scan to open SmartTrace Tracking Portal", 50, 480);
 
+                            ctx.font = "11px monospace";
+                            ctx.fillStyle = "#2563eb";
+                            const displayUrl = payload.length > 55 ? payload.substring(0, 52) + "..." : payload;
+                            ctx.fillText(displayUrl, 50, 510);
 
-                    ctx.font="18px Arial";
-                    ctx.fillStyle="#2563eb";
-                    ctx.fillText("Secure Examination QR Label",95,80);
-
-
-                    // QR
-                    ctx.drawImage(canvas,155,110,190,190);
-
-
-                    // Details
-                    ctx.fillStyle="#111";
-                    ctx.font="18px Arial";
-
-
-                    ctx.fillText(
-                        "Exam Code : " + document.getElementById("examCode").value,
-                        50,
-                        350
-                    );
-
-
-                    ctx.fillText(
-                        "Authority : " + document.getElementById("examAuthority").value,
-                        50,
-                        390
-                    );
-
-
-                    ctx.fillText(
-                        "Status : " + document.getElementById("examStatus").value,
-                        50,
-                        430
-                    );
-
-
-                    ctx.font="16px Arial";
-                    ctx.fillStyle="#666";
-
-
-                    ctx.fillText(
-                        "Scan to open SmartTrace Tracking Portal",
-                        70,
-                        520
-                    );
-
-
-                    downloadBtn.href = labelCanvas.toDataURL("image/png");
-                }
-               else if (img && downloadBtn) {
-                    downloadBtn.href = img.src;
-                }
-                }, 400);
-
+                            downloadBtn.href = labelCanvas.toDataURL("image/png");
+                        } else if (img && downloadBtn) {
+                            downloadBtn.href = img.src;
+                        }
+                    }, 400);
 
                 } else {
-                // FALLBACK: If CDN fails (or offline), draw a basic canvas-based mock barcode
-                renderCanvasFallback(qrOutput, EXAM_QR_PAYLOAD);
-                            }
-                } catch (e) {
-                console.error("QR Code library init error: ", e);
-                renderCanvasFallback(qrOutput, EXAM_QR_PAYLOAD);
+                    // Fallback custom renderer using HTML5 Canvas (useful in offline developer mode)
+                    renderCanvasFallback(qrOutput, payload);
                 }
-                    }
+            } catch (e) {
+                console.error("QR Code library init error: ", e);
+                renderCanvasFallback(qrOutput, payload);
+            }
+        }
+    }
 
 
                     // 3. PRINT TRIGGER

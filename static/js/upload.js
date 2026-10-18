@@ -148,52 +148,27 @@ document.addEventListener("DOMContentLoaded", () => {
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
     }
-});
 
-
-// ==========================================
-// EXTRA UI ENHANCEMENTS
-// ==========================================
-
-
-// Auto-hide flash messages after 4 seconds
-const alerts = document.querySelectorAll(".alert-box");
-
-
-alerts.forEach(alert => {
-    setTimeout(() => {
-        alert.style.transition = "0.5s";
-        alert.style.opacity = "0";
-        alert.style.transform = "translateY(-10px)";
-
-
+    // Auto-hide flash messages after 4 seconds
+    const alerts = document.querySelectorAll(".alert-box");
+    alerts.forEach(alert => {
         setTimeout(() => {
-            alert.remove();
-        }, 500);
-
-
-    }, 4000);
-});
-
-
-// Prevent multiple form submissions
-const uploadForm = document.querySelector("form");
-
-
-if (uploadForm && submitBtn) {
-
-
-    uploadForm.addEventListener("submit", function () {
-
-
-        submitBtn.disabled = true;
-
-
-        submitBtn.innerHTML =
-            '<i class="fa-solid fa-spinner fa-spin"></i> Uploading Secure Packet...';
-
-
+            alert.style.transition = "0.5s";
+            alert.style.opacity = "0";
+            alert.style.transform = "translateY(-10px)";
+            setTimeout(() => {
+                alert.remove();
+            }, 500);
+        }, 4000);
     });
 
-
-}
+    // Prevent multiple form submissions
+    const uploadForm = document.querySelector("form");
+    if (uploadForm && submitBtn) {
+        uploadForm.addEventListener("submit", function () {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML =
+                '<i class="fa-solid fa-spinner fa-spin"></i> Uploading Secure Packet...';
+        });
+    }
+});

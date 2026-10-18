@@ -52,6 +52,9 @@
         <a href="/reports">
             <i class="fa-solid fa-chart-line"></i> Reports
         </a>
+        <a href="/qr">
+            <i class="fa-solid fa-qrcode"></i> QR Certificate
+        </a>
         <a href="/logout">
             <i class="fa-solid fa-right-from-bracket"></i> Logout
         </a>
@@ -60,7 +63,7 @@
 
     <!-- Header bar panel -->
     <div class="section">
-        <h3>SecureChain Cryptographic Ledgers</h3>
+        <h3>SecureChain Cryptographic Audit Ledger (SHA-256 Chain Simulation)</h3>
         <div class="header-right">
             <!-- Notification bell -->
             <div class="top-icons">
@@ -247,13 +250,21 @@
                     <div class="integrity-info">
                         <i class="fa-solid fa-shield-halved"></i>
                         <div class="text">
-                            <span class="title">SecureChain Ledger Link Check</span>
+                            <span class="title">SecureChain Cryptographic Audit Check</span>
                             <span class="desc">Traverses block links recursively to verify parents block hashes connection.</span>
                         </div>
                     </div>
-                    <button id="verify-chain-btn" type="button" class="verify-chain-btn" {% if not blockchain_logs %}disabled{% endif %}>
-                        Verify Chain Integrity
-                    </button>
+                    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                        <button id="verify-chain-btn" type="button" class="verify-chain-btn" {% if not blockchain_logs %}disabled{% endif %}>
+                            Verify Chain Integrity
+                        </button>
+                        {% if exam %}
+                            <a href="/export_blockchain/{{ exam.exam_code }}" class="export-chain-btn">
+                                <i class="fa-solid fa-download"></i>
+                                Export Ledger (CSV)
+                            </a>
+                        {% endif %}
+                    </div>
                 </div>
             </section>
         {% else %}
@@ -271,16 +282,6 @@
 
     <!-- Link to blockchain controller scripts -->
     <script src="{{ url_for('static', filename='js/blockchain.js') }}"></script>
-
-
-    {% if exam %}
-<a href="/export_blockchain/{{ exam.exam_code }}">
-    <button type="button">
-        <i class="fa-solid fa-download"></i>
-        Export Blockchain
-    </button>
-</a>
-{% endif %}
 
 
 

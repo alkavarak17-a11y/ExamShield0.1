@@ -1,0 +1,51 @@
+services:
+  - type: web
+    name: examshield
+    runtime: python
+    region: oregon
+    plan: free
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_DEBUG
+        value: "false"
+      - key: SECRET_KEY
+        generateValue: true
+      # BASE_URL: Optional on Render, as RENDER_EXTERNAL_URL is automatically provided.
+      # You can explicitly set it to your custom domain or https://examshield.onrender.com
+      - key: BASE_URL
+        sync: false
+      # Cloud MySQL connection: Provide either DATABASE_URL or individual DB_* credentials
+      - key: DATABASE_URL
+        sync: false
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: "3306"
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_NAME
+        sync: false
+      - key: DB_SSL_DISABLED
+        value: "false"
+      # SMTP 2FA Email Configuration
+      - key: SMTP_SERVER
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      # AI Analysis Integration
+      - key: GEMINI_API_KEY
+        sync: false

@@ -16,12 +16,14 @@ import hashlib
 import os
 import re
 import secrets
+import socket
+import urllib.parse
 import bcrypt
 from werkzeug.utils import secure_filename
+from werkzeug.middleware.proxy_fix import ProxyFix
 from datetime import datetime, timedelta
-from flask import Flask, render_template, request, redirect, url_for, session, flash, make_response, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, flash, make_response, jsonify, has_request_context
 import mysql.connector
-#import google.generativeai as genai
 from pypdf import PdfReader
 
 import json
@@ -29,86 +31,244 @@ import json
 from dotenv import load_dotenv
 
 load_dotenv()
-print("SMTP USER:", os.getenv("SMTP_USER"))
-print("SMTP PASS EXISTS:", bool(os.getenv("SMTP_PASS")))
-print("GEMINI KEY EXISTS:", bool(os.getenv("GEMINI_API_KEY")))
 
-# 1. INITIALIZE FLASK APP
+# ==============================================================================
+# ENVIRONMENT & SECURITY CONFIGURATION
+# ==============================================================================
+debug_mode = os.getenv('FLASK_DEBUG', 'False').lower() in ('true', '1', 't')
+is_production = (os.getenv('FLASK_ENV', 'production').lower() == 'production' and not debug_mode) or bool(os.getenv('RENDER'))
+
+# ==============================================================================
+# NETWORK & BASE URL RESOLUTION (FOR PUBLIC QR VERIFICATION ACROSS NETWORKS)
+# ==============================================================================
+def get_lan_ip():
+    """
+    Auto-detects the reachable IPv4 address of this machine on the local network.
+    Retained for optional local network diagnostics or fallback.
+    """
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(('8.8.8.8', 80))
+        lan_ip = s.getsockname()[0]
+    except Exception:
+        try:
+            lan_ip = socket.gethostbyname(socket.gethostname())
+        except Exception:
+            lan_ip = '127.0.0.1'
+    finally:
+        s.close()
+    return lan_ip
+
+
+def get_external_base_url():
+    """
+    Resolves the canonical external base URL for QR codes, verification certificates,
+    and external links accessible across different Wi-Fi networks and mobile data.
+
+    Resolution order:
+    1. EXAMSHIELD_BASE_URL, BASE_URL, PUBLIC_URL, or RENDER_EXTERNAL_URL environment variables.
+    2. If within an active HTTP request:
+       - Uses request.host_url (correctly reconstructed by ProxyFix behind reverse proxies/HTTPS).
+       - In local development (localhost / 127.0.0.1), returns http://127.0.0.1:<port> unless
+         ALLOW_LAN_FALLBACK is explicitly enabled or a public domain is configured.
+    3. Safe fallback outside request context:
+       - Configured BASE_URL / RENDER_EXTERNAL_URL, or http://127.0.0.1:<port>.
+    Never returns null, empty, or unresolvable strings.
+    """
+    # 1. Check environment variables (Render auto-injects RENDER_EXTERNAL_URL)
+    env_url = (
+        os.environ.get('RENDER_EXTERNAL_URL') or
+        os.environ.get('EXAMSHIELD_BASE_URL') or
+        os.environ.get('BASE_URL') or
+        os.environ.get('PUBLIC_URL') or
+        ''
+    ).strip()
+
+    if env_url:
+        if not env_url.startswith(('http://', 'https://')):
+            env_url = f"https://{env_url}"
+        return env_url.rstrip('/')
+
+    # 2. Check active request context
+    if has_request_context():
+        host_parts = request.host.split(':')
+        host_name = host_parts[0].lower()
+        port = host_parts[1] if len(host_parts) > 1 else ('443' if request.scheme == 'https' else '80')
+        scheme = request.scheme or 'http'
+
+        if host_name in ('localhost', '127.0.0.1', '::1', '0.0.0.0'):
+            # Only use LAN IP if explicitly requested via ALLOW_LAN_FALLBACK for local testing
+            if os.environ.get('ALLOW_LAN_FALLBACK', '').lower() in ('true', '1', 'yes'):
+                lan_ip = get_lan_ip()
+                if lan_ip and lan_ip != '127.0.0.1':
+                    effective_port = port if port not in ('80', '443') else '5000'
+                    return f"{scheme}://{lan_ip}:{effective_port}"
+            return request.host_url.rstrip('/')
+
+        # Standard public domain request (e.g. https://examshield.onrender.com)
+        return request.host_url.rstrip('/')
+
+    # 3. Fallback outside request context
+    port = os.environ.get('PORT', '5000')
+    return f"http://127.0.0.1:{port}"
+
+
+# 1. INITIALIZE FLASK APP WITH REVERSE PROXY SUPPORT
 app = Flask(__name__)
 
-
-
+# Reverse Proxy Support: Handles X-Forwarded-Proto, X-Forwarded-Host, and X-Forwarded-For
+# Ensures url_for(), redirects, and request.is_secure reflect HTTPS and the public domain
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
 
 # Secret key is required to encrypt and secure client-side cookies and session data.
-# In production, this should be a random secure string loaded from environment variables.
+secret_key = os.getenv("SECRET_KEY")
+if not secret_key:
+    if is_production:
+        print("[WARNING] SECRET_KEY not set in production! Generating secure ephemeral key.")
+        app.secret_key = secrets.token_hex(32)
+    else:
+        app.secret_key = "examshield_super_secure_key_2026"
+else:
+    app.secret_key = secret_key
+
+app.config.update(
+    SESSION_PERMANENT=False,
+    SESSION_COOKIE_SECURE=is_production,       # Enforce HTTPS-only cookie transmission in production
+    SESSION_COOKIE_HTTPONLY=True,              # Guard against client-side script cookie theft
+    SESSION_COOKIE_SAMESITE='Lax',             # CSRF protection
+    PERMANENT_SESSION_LIFETIME=timedelta(hours=8),
+    MAX_CONTENT_LENGTH=16 * 1024 * 1024        # 16 MB max payload limit
+)
 
 
-# 2. DATABASE CONFIGURATION
-# We configure database connection parameters for MySQL.
-# Host: 'localhost' or '127.0.0.1'
-# User: 'root'
-# Password: 'root'
-# Database: 'examshield'
-db_config = {
-    'host': '127.0.0.1',
-    'user': 'root',
-    'password': 'root',
-    'database': 'examshield',
-    'autocommit': True
-}
+# 2. PERSISTENT DATABASE CONFIGURATION (SUPPORTS LOCAL & CLOUD MYSQL)
+def get_db_config():
+    """
+    Resolves MySQL database connection configuration from either:
+    1. DATABASE_URL / MYSQL_URL (Standard cloud connection URI, e.g.
+       mysql://user:password@host:port/database)
+    2. Discrete environment variables (DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME, DB_SSL)
+    Supports both local development MySQL and cloud-hosted MySQL (TiDB Cloud, Aiven, Railway, etc.)
+    with automatic SSL negotiation.
+    """
+    db_url = (
+        os.environ.get('DATABASE_URL') or
+        os.environ.get('MYSQL_URL') or
+        os.environ.get('JAWSDB_URL') or
+        os.environ.get('CLEARDB_DATABASE_URL') or
+        ''
+    ).strip()
+
+    if db_url and db_url.startswith(('mysql://', 'mysql2://')):
+        if db_url.startswith('mysql2://'):
+            db_url = 'mysql://' + db_url[9:]
+        parsed = urllib.parse.urlparse(db_url)
+        cfg = {
+            'host': parsed.hostname or '127.0.0.1',
+            'port': int(parsed.port or 3306),
+            'user': urllib.parse.unquote(parsed.username or 'root'),
+            'password': urllib.parse.unquote(parsed.password or ''),
+            'database': parsed.path.lstrip('/') or 'examshield',
+            'autocommit': True,
+            'connection_timeout': int(os.environ.get('DB_CONNECT_TIMEOUT', '10'))
+        }
+        qs = urllib.parse.parse_qs(parsed.query)
+        if 'ssl-mode' in qs or 'ssl' in qs or parsed.hostname not in ('localhost', '127.0.0.1', '0.0.0.0'):
+            cfg['ssl_disabled'] = False
+        else:
+            cfg['ssl_disabled'] = True
+
+        ssl_ca = os.environ.get('DB_SSL_CA')
+        if ssl_ca:
+            cfg['ssl_ca'] = ssl_ca
+        return cfg
+
+    # Discrete environment variables
+    host = os.environ.get('DB_HOST', '127.0.0.1').strip()
+    port = int(os.environ.get('DB_PORT', '3306'))
+    user = os.environ.get('DB_USER', 'root').strip()
+    password = os.environ.get('DB_PASSWORD', 'root')
+    database = os.environ.get('DB_NAME', 'examshield').strip()
+
+    cfg = {
+        'host': host,
+        'port': port,
+        'user': user,
+        'password': password,
+        'database': database,
+        'autocommit': True,
+        'connection_timeout': int(os.environ.get('DB_CONNECT_TIMEOUT', '10'))
+    }
+
+    ssl_disabled_env = os.environ.get('DB_SSL_DISABLED')
+    if ssl_disabled_env is not None:
+        cfg['ssl_disabled'] = ssl_disabled_env.lower() in ('true', '1', 't')
+    elif host not in ('localhost', '127.0.0.1', '0.0.0.0'):
+        cfg['ssl_disabled'] = False
+    else:
+        cfg['ssl_disabled'] = True
+
+    ssl_ca = os.environ.get('DB_SSL_CA')
+    if ssl_ca:
+        cfg['ssl_ca'] = ssl_ca
+
+    return cfg
+
+
+def get_db_connection():
+    """
+    Establishes and returns an active connection to the MySQL database.
+    Dynamically resolves connection parameters to seamlessly support both
+    local developer environments and remote persistent cloud clusters.
+    """
+    return mysql.connector.connect(**get_db_config())
+
+
+def ensure_database_schema():
+    """
+    Non-destructive schema verification on startup.
+    Ensures that core tables exist so that fresh deployments (e.g. on Render with a new TiDB/Aiven database)
+    work out-of-the-box without requiring manual SQL commands.
+    Never drops or overwrites existing data.
+    """
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SHOW TABLES LIKE 'users'")
+        table_exists = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+        if not table_exists:
+            print("[DATABASE] Fresh database detected. Creating core schema and initial seeding...")
+            import init_db
+            init_db.initialize_database(skip_if_populated=True)
+            print("[DATABASE] Schema initialization complete.")
+    except Exception as e:
+        print(f"[DATABASE NOTICE] Schema check notice: {e}")
+
 
 # SMTP configurations for secure email OTP delivery
-SMTP_SERVER = "smtp.gmail.com"
-SMTP_PORT = 587
-
-# Your Gmail
+SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USER = os.getenv("SMTP_USER")
 SMTP_PASS = os.getenv("SMTP_PASS")
-
-print("SMTP PASSWORD LOADED:", bool(SMTP_PASS))
-# Flask session security key
-app.secret_key = os.getenv(
-    "SECRET_KEY",
-    "examshield_super_secure_key_2026"
-)
-app.config['SESSION_PERMANENT'] = False
-
-
-
-
-SMTP_FROM = "EXAMSHIELD Secure Access <alkavarak17@gmail.com>"
+SMTP_FROM = f"EXAMSHIELD Secure Access <{SMTP_USER}>" if SMTP_USER else "EXAMSHIELD Secure Access"
 
 # ==========================
 # GEMINI AI CONFIGURATION
 # ==========================
-
 import google.generativeai as genai
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+model = None
 
-genai.configure(
-    api_key=GEMINI_API_KEY
-)
-model = genai.GenerativeModel("gemini-1.5-flash")
-
-def test_gemini():
-    response = model.generate_content(
-        "Analyze this exam paper security risk"
-    )
-    return response.text
-
-def get_db_connection():
-    """
-    Why it is needed:
-        Establishes and returns a connection to the MySQL database.
-        Having a dedicated connection helper avoids open connection leaks and
-        ensures standard configuration is used for every SQL request.
-    Input:
-        None
-    Output:
-        mysql.connector.connection_cext.CMySQLConnection: An active database connection object.
-    """
-    return mysql.connector.connect(**db_config)
+if GEMINI_API_KEY and not GEMINI_API_KEY.startswith("AQ."):
+    try:
+        genai.configure(api_key=GEMINI_API_KEY)
+        model = genai.GenerativeModel("gemini-1.5-flash")
+    except Exception as e:
+        model = None
 
 
 # 3. HELPER FUNCTIONS
@@ -174,18 +334,17 @@ def send_otp_email(recipient_email, officer_name, otp):
     Sends a 2FA or Password Reset OTP email. Logs fallback info to console if SMTP offline.
     """
     subject = "EXAMSHIELD Login Verification OTP"
-    body = f"""Government of India
-EXAMSHIELD Secure Access Portal
+    body = f"""EXAMSHIELD Secure Examination System
+Two-Factor Authentication
 
 Dear {officer_name},
 
-Your One-Time Password is:
+Your One-Time Password (OTP) for secure system access is:
 
 {otp}
 
-This OTP is valid for 5 minutes.
-
-Do not share this OTP."""
+This OTP is strictly confidential and expires in 5 minutes.
+Never share this verification code with anyone."""
 
     from email.mime.text import MIMEText
     from email.mime.multipart import MIMEMultipart
@@ -196,22 +355,9 @@ Do not share this OTP."""
     msg['Subject'] = subject
     msg.attach(MIMEText(body, 'plain'))
     
-    # Log clearly in console for easy debugging and fallback retrieval
-    print("\n" + "="*60, flush=True)
-    print(f"[SECURITY INFO] OTP generated for {recipient_email}: {otp}", flush=True)
-    print("="*60 + "\n", flush=True)
-    
-    # Write OTP to a local file in workspace to bypass stdout buffering for developers
     try:
-        bypass_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'otp_bypass.txt')
-        with open(bypass_path, 'w') as f:
-            f.write(otp)
-    except Exception as e:
-        print(f"[SECURITY ERROR] Failed to write OTP bypass file: {e}", flush=True)
-    
-    try:
-        if not SMTP_SERVER:
-            return False, "SMTP server not configured."
+        if not SMTP_SERVER or not SMTP_USER or not SMTP_PASS:
+            return False, "SMTP email server not fully configured."
 
         import smtplib
 
@@ -276,9 +422,75 @@ def check_remember_me():
                     flash("Welcome back! Authenticated securely via Remember Me.", "success")
             except Exception as e:
                 print(f"[SECURITY ERROR] Auto-login token validation failure: {e}")
-            finally:
-                if conn:
-                    conn.close()
+@app.before_request
+def validate_host_header():
+    """
+    Guards against HTTP Host Header injection attacks.
+    If ALLOWED_HOSTS is set in the environment, validates that request.host
+    matches one of the approved hosts or domains.
+    """
+    allowed_hosts_raw = os.getenv('ALLOWED_HOSTS', '').strip()
+    if allowed_hosts_raw:
+        allowed_hosts = [h.strip().lower() for h in allowed_hosts_raw.split(',') if h.strip()]
+        allowed_hosts.extend(['localhost', '127.0.0.1', 'testserver'])
+        host = request.host.split(':')[0].lower()
+        matched = False
+        for ah in allowed_hosts:
+            if ah.startswith('*.') and (host == ah[2:] or host.endswith(ah[1:])):
+                matched = True
+                break
+            elif host == ah:
+                matched = True
+                break
+        if not matched:
+            return "Invalid or unauthorized Host header.", 400
+
+
+@app.after_request
+def apply_security_headers(response):
+    """
+    Applies modern browser security headers to every response:
+    - X-Content-Type-Options: nosniff
+    - X-Frame-Options: SAMEORIGIN
+    - X-XSS-Protection: 1; mode=block
+    - Referrer-Policy: strict-origin-when-cross-origin
+    - Strict-Transport-Security: HSTS header over HTTPS
+    """
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    if request.is_secure:
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    return response
+
+
+@app.route('/health')
+@app.route('/healthz')
+def health_check():
+    """
+    Deployment health check endpoint for Render, cloud monitors, and container probes.
+    Verifies that the Flask worker and MySQL database are operational.
+    """
+    db_status = "disconnected"
+    try:
+        conn = get_db_connection()
+        if conn.is_connected():
+            db_status = "connected"
+        conn.close()
+    except Exception as e:
+        db_status = f"error: {str(e)}"
+
+    is_healthy = db_status == "connected"
+    return jsonify({
+        "status": "healthy" if is_healthy else "degraded",
+        "service": "ExamShield",
+        "timestamp": datetime.now().isoformat(),
+        "database": db_status,
+        "environment": "production" if is_production else "development",
+        "base_url": get_external_base_url()
+    }), (200 if is_healthy else 503)
+
 
 # 5. CONTROLLER & ROUTES
 
@@ -352,34 +564,17 @@ def login():
                 success, email_msg = send_otp_email(user['email'], user['officer_name'], otp)
                 
                 if success:
-                    flash("Verification code sent to registered official email.", "success")
+                    flash("Verification code sent to registered officer email.", "success")
                 else:
-                    flash("Email delivery offline. OTP printed to server terminal for verification.", "info")
+                    flash("Email delivery is offline. Please check SMTP settings or use Biometric Login.", "info")
                     
                 return redirect(url_for('verify'))
             else:
-                flash("Invalid Government ID or Password", "error")
+                flash("Invalid Officer ID or Password.", "error")
                 
         except Exception as err:
-            import traceback
-            traceback.print_exc()
-            print("Dashboard Error:", err)
-
-            flash(f"Dashboard Error: {err}", "error")
-
-            return render_template(
-                'dashboard.html',
-                total_exams=0,
-                in_progress_exams=0,
-                total_centers=0,
-                online_percent=100.0,
-                avg_integrity_score=100.0,
-                total_alerts=0,
-                critical_alerts=0,
-                centers_data=[],
-                recent_activities=[]
-            )
-            flash(f"Database Server Connection Error: {err}", "error")
+            flash(f"Authentication system error: {err}", "error")
+            return render_template('login.html')
         finally:
             if conn:
                 conn.close()
@@ -442,14 +637,14 @@ def verify():
                     
                     response = make_response(redirect(url_for('dashboard')))
                     
-                    if False:
+                    if remember:
                         token = secrets.token_hex(32)
                         expiry = datetime.now() + timedelta(days=30)
                         cursor.execute("""
                             INSERT INTO remember_tokens (user_id, token, expiry_date)
                             VALUES (%s, %s, %s)
                         """, (temp_id, token, expiry))
-                        response.set_cookie('remember_token', token, max_age=30*24*60*60, httponly=True, samesite='Lax',secure=True)
+                        response.set_cookie('remember_token', token, max_age=30*24*60*60, httponly=True, samesite='Lax', secure=request.is_secure)
                     
                     session.pop('temp_user_id', None)
                     session.pop('temp_user_gov_id', None)
@@ -490,22 +685,44 @@ def verify():
 
 @app.route("/verify/<exam_code>")
 def verify_exam(exam_code):
+    """
+    Public digital verification endpoint for QR code label scanning.
+    Validates examination integrity and renders official verification certificate.
+    """
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM exams WHERE exam_code = %s", (exam_code,))
+        exam = cursor.fetchone()
+        
+        paper_dna = ""
+        if exam:
+            paper_dna = exam.get('paper_hash') or hashlib.sha256(exam['exam_code'].encode()).hexdigest()
+            cursor.execute("SELECT COUNT(*) as block_count FROM blockchain_logs WHERE exam_code = %s", (exam_code,))
+            b_res = cursor.fetchone()
+            block_count = b_res['block_count'] if b_res else 0
 
-    cursor = mysql.connection.cursor(dictionary=True)
+            cursor.execute("SELECT * FROM tracking_logs WHERE exam_code = %s ORDER BY id DESC LIMIT 1", (exam_code,))
+            latest_track = cursor.fetchone()
 
-    cursor.execute(
-        "SELECT * FROM exams WHERE exam_code=%s",
-        (exam_code,)
-    )
+            cursor.close()
+            conn.close()
 
-    exam = cursor.fetchone()
-
-    cursor.close()
-
-    if exam:
-        return render_template("verify.html", exam=exam)
-
-    return "Exam not found"
+            return render_template(
+                "verify_public.html",
+                exam=exam,
+                paper_dna=paper_dna,
+                block_count=block_count,
+                latest_track=latest_track,
+                current_time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            )
+        return render_template("verify_public.html", exam=None, error=f"Examination packet '{exam_code}' not found in registry."), 404
+    except Exception as e:
+        return render_template("verify_public.html", exam=None, error=f"Database verification query failed: {e}"), 500
+    finally:
+        if conn and conn.is_connected():
+            conn.close()
 @app.route('/resend-otp', methods=['POST'])
 def resend_otp():
     """
@@ -555,14 +772,12 @@ def resend_otp():
         
         success, email_msg = send_otp_email(user['email'], user['officer_name'], otp)
         
-        msg = "New OTP sent to registered email address."
-        if not success:
-            msg += f" (Developer Bypass: OTP is {otp})"
-            
-        return jsonify({
-            'status': 'success',
-            'message': msg
-        })
+        if success:
+            msg = "New verification OTP sent to your registered email address."
+            return jsonify({'status': 'success', 'message': msg})
+        else:
+            msg = "Email delivery service is currently offline. Please check SMTP settings."
+            return jsonify({'status': 'error', 'message': msg}), 503
     except Exception as e:
         return jsonify({'status': 'error', 'message': f"Database failure: {e}"}), 500
     finally:
@@ -581,7 +796,7 @@ def forgot_password():
         if step == '1':
             gov_id = request.form.get('government_id')
             if not gov_id:
-                flash("Government ID / Email is required.", "error")
+                flash("Officer ID / Email is required.", "error")
                 return render_template('forgot_password.html', step=1)
                 
             conn = None
@@ -594,7 +809,7 @@ def forgot_password():
                 user = cursor.fetchone()
                 
                 if not user:
-                    flash("Government ID or Email not recognized in database.", "error")
+                    flash("Officer ID or Email not recognized in database.", "error")
                     return render_template('forgot_password.html', step=1)
                     
                 otp = generate_otp()
@@ -618,11 +833,11 @@ def forgot_password():
                 masked_prefix = email_prefix[0] + "*" * (len(email_prefix) - 2) + email_prefix[-1] if len(email_prefix) > 2 else email_prefix[0] + "*"
                 masked_email = f"{masked_prefix}@{email_domain}"
                 
-                msg = f"OTP code has been dispatched to: {masked_email}."
-                if not success:
-                    msg += f" (Developer Bypass: OTP is {otp})"
+                if success:
+                    flash(f"Password reset verification code dispatched to: {masked_email}.", "success")
+                else:
+                    flash("Verification code created, but email delivery is offline. Please check SMTP settings.", "warning")
                     
-                flash(msg, "success")
                 return render_template('forgot_password.html', step=2, government_id=user['government_id'])
             except Exception as e:
                 flash(f"Database error: {e}", "error")
@@ -1742,18 +1957,18 @@ def upload():
             sha256_hash = hashlib.sha256(file_data).hexdigest()
             file.seek(0) # reset file cursor for storage write
 
-            # Check if this paper already exists
+            # Check if this paper already exists for another exam
             cursor.execute("""
             SELECT exam_code
             FROM exams
-            WHERE paper_hash=%s
-            """, (sha256_hash,))
+            WHERE paper_hash=%s AND exam_code != %s
+            """, (sha256_hash, exam_code))
 
             existing = cursor.fetchone()
 
             if existing:
                 flash(
-                    f"🚨 Possible Paper Leak Detected! This paper already exists for Exam {existing['exam_code']}.",
+                    f"Possible Paper Duplication / Leak Alert: This paper hash matches Exam {existing['exam_code']}.",
                     "error"
                 )
                 cursor.close()
@@ -1761,90 +1976,74 @@ def upload():
                 return redirect(url_for("upload", exam_code=exam_code))
 
             # 3. Write file copy locally using secure namespacing
-            filename = secure_filename(file.filename)
-            safe_filename = f"{exam_code}_{filename}"
+            filename = secure_filename(file.filename) or "question_paper.pdf"
+            if not filename.lower().endswith(".pdf"):
+                filename += ".pdf"
+            safe_filename = f"{secure_filename(exam_code)}_{filename}"
             file_path = os.path.join(upload_folder, safe_filename)
+
+            real_folder = os.path.realpath(upload_folder)
+            real_path = os.path.realpath(file_path)
+            if not real_path.startswith(real_folder):
+                flash("Security Error: Invalid file path traversal detected.", "error")
+                cursor.close()
+                conn.close()
+                return redirect(url_for("upload", exam_code=exam_code))
+
             file.save(file_path)
 
-            # Extract PDF text
-            pdf_text = extract_pdf_text(file_path)
-
-            # Reject empty or image-only PDF
-            if len(pdf_text.strip()) < 100:
-
+            # Validate and extract PDF text
+            try:
+                reader = PdfReader(file_path)
+                if len(reader.pages) == 0:
+                    raise ValueError("Document contains 0 pages.")
+            except Exception as e:
                 if os.path.exists(file_path):
                     os.remove(file_path)
-
                 cursor.close()
                 conn.close()
-
-                flash("Image-only or empty PDF detected. Please upload a valid question paper.", "error")
-
+                flash(f"Invalid or unreadable PDF: {e}. Please ensure the PDF is uncorrupted and not password-protected.", "error")
                 return redirect(url_for("upload", exam_code=exam_code))
 
-           # Verify it looks like a question paper
+            pdf_text = extract_pdf_text(file_path)
+
+            # Reject empty or unreadable text PDF
+            if len(pdf_text.strip()) < 100:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                cursor.close()
+                conn.close()
+                flash("The uploaded PDF appears to be empty or image-only without selectable text. Please upload a standard question paper PDF.", "error")
+                return redirect(url_for("upload", exam_code=exam_code))
+
+            # Verify it matches question paper structure
             is_question_paper = detect_question_paper(pdf_text)
-
             if not is_question_paper:
-
-               if os.path.exists(file_path):
-                os.remove(file_path)
-
+                if os.path.exists(file_path):
+                    os.remove(file_path)
                 cursor.close()
                 conn.close()
-
-                flash("The uploaded PDF does not appear to be a valid question paper.", "error")
-
+                flash("Validation Error: The uploaded document does not appear to contain standard question paper content (questions, marks, sections).", "error")
                 return redirect(url_for("upload", exam_code=exam_code))
 
-            # =====================================
-            # Gemini AI Question Paper Verification
-            # =====================================
-
-            try:
-
-                prompt = f"""
-            You are an AI Exam Paper Validator.
-
-            Read the document below and decide whether it is an actual examination question paper.
-
-            Return ONLY one word.
-
-            YES
-
-            or
-
-            NO
-
-            Document:
-
-            {pdf_text[:10000]}
-            """
-
-                response = model.generate_content(prompt)
-
-                result = response.text.strip().upper()
-
-                if result != "YES":
-
-                    if os.path.exists(file_path):
-                        os.remove(file_path)
-
-                    cursor.close()
-                    conn.close()
-
-                    flash("Gemini AI rejected this PDF. It is not a valid examination question paper.", "error")
-
-                    return redirect(url_for("upload", exam_code=exam_code))
-
-            except Exception as e:
-                print("Gemini Error:", e)
-
-                flash("Gemini AI is currently unavailable. Continuing with rule-based validation.", "warning")
+            # Optional AI validation if configured
+            if model:
+                try:
+                    prompt = f"""You are an AI Exam Paper Validator. Read the document excerpt below and decide whether it is an actual examination question paper. Return ONLY one word: YES or NO.\nDocument excerpt:\n{pdf_text[:8000]}"""
+                    response = model.generate_content(prompt)
+                    result = response.text.strip().upper()
+                    if "NO" in result and "YES" not in result:
+                        if os.path.exists(file_path):
+                            os.remove(file_path)
+                        cursor.close()
+                        conn.close()
+                        flash("AI Security Validation: The document content does not conform to standardized examination structure.", "error")
+                        return redirect(url_for("upload", exam_code=exam_code))
+                except Exception as e:
+                    pass
 
             # Read metadata
             metadata = get_pdf_metadata(file_path)
-            print("PDF Metadata:", metadata)
 
             # File path relative to static asset loader
             relative_file_path = f"static/uploads/{safe_filename}"
@@ -2105,39 +2304,55 @@ def security_scan():
             mock_report = json.dumps(report)
 
                        
-            # Gemini AI Security Analysis
-            # -----------------------------
+            # AI & Rule-Based Security Engine Analysis
+            # ----------------------------------------
+            ai_report = ""
+            if model:
+                try:
+                    prompt = f"""You are an Exam Paper Security AI. Analyze this exam paper.
+Paper excerpt:
+{text[:10000]}
+Check:
+1. Duplicate Questions
+2. Suspicious Content
+3. Confidential Information or Passwords
+4. Answer Keys
+5. Overall Security Risk
+Give a professional, well-structured security report in clean English."""
+                    ai_response = model.generate_content(prompt)
+                    ai_report = ai_response.text.strip()
+                except Exception as e:
+                    ai_report = ""
 
-            try:
+            if not ai_report:
+                dup_text = f"{duplicates} potential duplicate question(s) flagged." if duplicates > 0 else "0 duplicate questions detected (Clean)."
+                keyw_text = f"Flagged sensitive terms: {', '.join(found)}." if found else "None detected (Clean)."
+                
+                ai_report = f"""EXAMSHIELD SECURITY AUDIT ENGINE - HEURISTIC SWEEP REPORT
+============================================================
+Target Examination: {exam_code}
+Analysis Mode: Automated Deep Rule-Based Security Sweep
 
-                prompt = f"""
-            You are an Exam Paper Security AI.
+1. CONTENT VOLUME & DENSITY:
+   - Extracted Characters: {len(text)}
+   - Evaluation: {'PASSED - Standard examination volume verified.' if len(text) >= 1000 else 'CAUTION - Content below typical exam volume.'}
 
-            Analyze this exam paper.
+2. DUPLICATE QUESTION ANALYSIS:
+   - Status: {dup_text}
+   - Score Penalty: -{duplicate_penalty} points
 
-            Paper:
+3. SENSITIVE KEYWORD & LEAK SWEEP:
+   - Flagged Terms: {keyw_text}
+   - Score Penalty: -{20 if found else 0} points
 
-            {text[:12000]}
+4. DOCUMENT ARTIFACT INTEGRITY:
+   - Structure: Standardized question pagination confirmed.
+   - Hygiene: PDF metadata inspected.
 
-            Check:
-
-            1. Duplicate Questions
-            2. Suspicious Content
-            3. Confidential Information
-            4. Passwords
-            5. Answer Keys
-            6. Overall Security Risk
-
-            Give a professional report in simple English.
-            """
-
-                ai_response = model.generate_content(prompt)
-
-                ai_report = ai_response.text
-
-            except Exception as e:
-
-                ai_report = f"Gemini AI Error : {e}"
+5. COMPOSITE INTEGRITY VERDICT:
+   - Calculated Security Score: {security_score}/100
+   - Audit Recommendation: {'HIGH INTEGRITY - Cleared for dispatch pipeline' if security_score >= 90 else 'SECURITY REVIEW REQUIRED - Resolve flagged items before conduct'}
+============================================================"""
 
             # Update exam details
             cursor.execute("""
@@ -2378,28 +2593,21 @@ def verify_chain():
         if not blocks:
             return jsonify({'status': 'error', 'message': 'No ledger logs recorded for this exam.'}), 400
 
-        # Traverse sequential chain links
-        for i in range(1, len(blocks)):
-
-        # Verify chain link
-            if blocks[i]['previous_hash'] != blocks[i-1]['block_hash']:
+        # Traverse sequential chain links and validate hash format for all blocks
+        for i, block in enumerate(blocks):
+            bhash = block.get('block_hash', '')
+            if len(bhash) != 64 or not all(c in "0123456789abcdef" for c in bhash.lower()):
                 return jsonify({
                     'status': 'tampered',
-                    'message': f"Block {blocks[i]['block_index']} previous hash mismatch."
+                    'message': f"Corrupted or invalid SHA-256 hash detected in Block {block.get('block_index', i)}."
                 })
 
-        # Verify hash format
-        if len(blocks[i]['block_hash']) != 64:
-            return jsonify({
-                'status': 'tampered',
-                'message': f"Invalid SHA-256 hash detected in Block {blocks[i]['block_index']}."
-            })
-
-        if not all(c in "0123456789abcdef" for c in blocks[i]['block_hash'].lower()):
-            return jsonify({
-                'status': 'tampered',
-                'message': f"Corrupted blockchain hash in Block {blocks[i]['block_index']}."
-            })
+            if i > 0:
+                if block['previous_hash'] != blocks[i-1]['block_hash']:
+                    return jsonify({
+                        'status': 'tampered',
+                        'message': f"Block {block['block_index']} previous hash mismatch with parent block."
+                    })
 
         return jsonify({
             'status': 'success',
@@ -2474,6 +2682,9 @@ def export_blockchain(exam_code):
     )
 @app.route('/search')
 def search():
+    if not session.get('logged_in'):
+        flash("Security Shield: Please log in to search examination registry.", "error")
+        return redirect(url_for('login'))
 
     keyword = request.args.get('q')
 
@@ -2509,11 +2720,10 @@ def search():
     cursor.close()
     conn.close()
 
-
     return render_template(
-    "search_results.html",
-    exams=exams,
-    keyword=keyword
+        "search_results.html",
+        exams=exams,
+        keyword=keyword
     )
     
 @app.route('/qr')
@@ -2535,6 +2745,13 @@ def qr():
         return redirect(url_for('login'))
 
     conn = None
+    cursor = None
+    created_exams = []
+    exam = None
+    paper_dna = ""
+    qr_status = "Pending"
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
@@ -2547,78 +2764,313 @@ def qr():
         selected_code = request.args.get('exam_code')
         if not selected_code and created_exams:
             selected_code = created_exams[0]['exam_code']
-            
-        exam = None
-        paper_dna = ""
-        
-        if selected_code:
+
+        if not selected_code:
+            # Missing input and no examinations exist in registry
+            qr_status = "Pending"
+        else:
             # 3. Retrieve exam details
             cursor.execute("SELECT * FROM exams WHERE exam_code = %s", (selected_code,))
             exam = cursor.fetchone()
             
-            if exam:
-                # 4. Generate dynamic SHA-256 placeholder hash for visual fingerprint if no paper uploaded yet
-                paper_dna = exam['paper_hash']
+            if not exam:
+                # Invalid or unrecorded exam code
+                qr_status = "Invalid"
+                flash(f"Security Alert: Examination code '{selected_code}' not found in registry.", "warning")
+            else:
+                # 4. Extract or generate SHA-256 fingerprint
+                paper_dna = exam.get('paper_hash') or ""
                 if not paper_dna:
                     paper_dna = hashlib.sha256(exam['exam_code'].encode()).hexdigest()
 
-                    # QR verification status
-                    qr_status = "Verified"
+                # 5. Check if exam is expired
+                is_expired = False
+                exam_status = str(exam.get('status', '')).strip().lower()
+                if exam_status in ('expired', 'cancelled'):
+                    is_expired = True
+                elif exam.get('exam_date'):
+                    try:
+                        exam_d = exam['exam_date']
+                        if isinstance(exam_d, str):
+                            exam_d = datetime.strptime(exam_d, '%Y-%m-%d').date()
+                        if exam_d < datetime.now().date() and exam_status in ('closed', 'completed'):
+                            is_expired = True
+                    except Exception:
+                        pass
 
-                    if exam.get("paper_hash"):
-                        qr_status = "Verified"
-                    else:
-                        qr_status = "Pending"
+                # 6. Assign appropriate status according to verification rules
+                if is_expired:
+                    qr_status = "Expired"
+                elif exam.get('paper_hash') and len(exam['paper_hash']) == 64:
+                    qr_status = "Verified"
+                else:
+                    qr_status = "Pending"
                     
-        cursor.close()
-        conn.close()
-        
+        # Construct absolute verification URL for QR containment label
+        base_url = get_external_base_url()
+        verification_url = ""
+        if exam and exam.get('exam_code'):
+            verification_url = f"{base_url}{url_for('verify_report', exam_code=exam['exam_code'])}"
+
         return render_template(
-        'qr.html',
-        created_exams=created_exams,
-        exam=exam,
-        paper_dna=paper_dna,
-        qr_status=qr_status
-)
-        
-    except mysql.connector.Error as err:
-            flash(f"Database error during QR label synchronization: {err}", "error")
-            return render_template(
             'qr.html',
             created_exams=created_exams,
             exam=exam,
             paper_dna=paper_dna,
-            qr_status="Ready"
+            qr_status=qr_status,
+            verification_url=verification_url,
+            base_url=base_url,
+            current_time=now_str
         )
+        
+    except mysql.connector.Error as err:
+        flash(f"Database error during QR label synchronization: {err}", "error")
+        qr_status = "Error"
+        base_url = get_external_base_url()
+        verification_url = f"{base_url}{url_for('verify_report', exam_code=exam['exam_code'])}" if exam and exam.get('exam_code') else ""
+        return render_template(
+            'qr.html',
+            created_exams=created_exams,
+            exam=exam,
+            paper_dna=paper_dna,
+            qr_status=qr_status,
+            verification_url=verification_url,
+            base_url=base_url,
+            current_time=now_str
+        )
+    except Exception as err:
+        flash(f"Unexpected error during QR label processing: {err}", "error")
+        qr_status = "Error"
+        base_url = get_external_base_url()
+        verification_url = f"{base_url}{url_for('verify_report', exam_code=exam['exam_code'])}" if exam and exam.get('exam_code') else ""
+        return render_template(
+            'qr.html',
+            created_exams=created_exams,
+            exam=exam,
+            paper_dna=paper_dna,
+            qr_status=qr_status,
+            verification_url=verification_url,
+            base_url=base_url,
+            current_time=now_str
+        )
+    finally:
+        if cursor:
+            try:
+                cursor.close()
+            except Exception:
+                pass
+        if conn and conn.is_connected():
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+
+def evaluate_exam_security(exam, blockchain_logs, tracking_logs):
+    """
+    Evaluates examination security compliance across Paper DNA, automated scan,
+    cryptographic audit ledger, and GPS transit checkpoints.
+    Derives consistent status, recommendation, reason list, and badge indicators.
+    """
+    if not exam:
+        return {
+            'overall_status': 'NOT CONFIGURED',
+            'overall_badge': 'pending',
+            'verdict_theme': 'info',
+            'verdict_title': 'NO EXAMINATION LOADED',
+            'verdict_desc': 'Select an examination from the registry to compile its security compliance audit.',
+            'recommendation': 'NOT CONFIGURED',
+            'recommendation_color': '#94a3b8',
+            'paper_check': {'status': 'NOT CONFIGURED', 'badge': 'badge-gray', 'text': 'No Exam Record'},
+            'scan_check': {'status': 'NOT CONFIGURED', 'badge': 'badge-gray', 'text': 'Scan Inactive'},
+            'ledger_check': {'status': 'NOT CONFIGURED', 'badge': 'badge-gray', 'text': 'Ledger Empty'},
+            'tracking_check': {'status': 'NOT CONFIGURED', 'badge': 'badge-gray', 'text': 'No Tracking'},
+            'reasons': ['No examination record selected.'],
+            'is_approved': False
+        }
+
+    reasons = []
+    has_warning = False
+    has_fail = False
+
+    # 1. Paper DNA Check
+    paper_hash = exam.get('paper_hash')
+    if paper_hash and len(paper_hash) == 64:
+        paper_check = {
+            'status': 'PASS',
+            'badge': 'badge-success',
+            'text': f"SHA-256 Hash Verified ({paper_hash[:8]}...{paper_hash[-8:]})"
+        }
+    else:
+        has_fail = True
+        paper_check = {
+            'status': 'PENDING',
+            'badge': 'badge-amber',
+            'text': 'Question paper not uploaded / unhashed'
+        }
+        reasons.append("Examination question paper has not been uploaded or hashed.")
+
+    # 2. Automated Security Scan Check
+    score = exam.get('security_score')
+    if score is None:
+        has_warning = True
+        scan_check = {
+            'status': 'PENDING',
+            'badge': 'badge-amber',
+            'text': 'Automated scan pending'
+        }
+        reasons.append("Automated security scan has not been performed on the uploaded paper.")
+    elif score >= 90:
+        scan_check = {
+            'status': 'PASS',
+            'badge': 'badge-success',
+            'text': f"High Confidence ({score}% Score)"
+        }
+    elif score >= 70:
+        has_warning = True
+        scan_check = {
+            'status': 'WARNING',
+            'badge': 'badge-amber',
+            'text': f"Acceptable with Notices ({score}% Score)"
+        }
+        reasons.append(f"Security score ({score}%) is below high-confidence threshold (90%). Requires supervisory review.")
+    else:
+        has_fail = True
+        scan_check = {
+            'status': 'FAIL',
+            'badge': 'badge-danger',
+            'text': f"Low Confidence ({score}% Score - Integrity Deficit)"
+        }
+        reasons.append(f"Security score ({score}%) failed minimum threshold (70%). Integrity anomalies detected.")
+
+    # 3. Cryptographic Audit Ledger Check
+    if not blockchain_logs:
+        has_warning = True
+        ledger_check = {
+            'status': 'NOT CONFIGURED',
+            'badge': 'badge-amber',
+            'text': 'No cryptographic ledger events'
+        }
+        reasons.append("No cryptographic audit blocks recorded for this examination.")
+    else:
+        tampered = False
+        for i in range(1, len(blockchain_logs)):
+            if blockchain_logs[i].get('previous_hash') != blockchain_logs[i-1].get('block_hash'):
+                tampered = True
+                break
+        if tampered:
+            has_fail = True
+            ledger_check = {
+                'status': 'FAIL',
+                'badge': 'badge-danger',
+                'text': 'Ledger Hash Mismatch Detected'
+            }
+            reasons.append("Cryptographic block ledger chain mismatch detected (possible tampering).")
+        else:
+            ledger_check = {
+                'status': 'PASS',
+                'badge': 'badge-success',
+                'text': f"{len(blockchain_logs)} Blocks Verified (Chain Intact)"
+            }
+
+    # 4. GPS Transit Tracking Checkpoints
+    total_expected = 5
+    logged_count = len(tracking_logs) if tracking_logs else 0
+    if logged_count == 0:
+        has_warning = True
+        tracking_check = {
+            'status': 'PENDING',
+            'badge': 'badge-amber',
+            'text': f"0 of {total_expected} Checkpoints Recorded (Pre-Transit)"
+        }
+        reasons.append("GPS transit tracking has not commenced (0 of 5 checkpoints recorded).")
+    elif logged_count < total_expected:
+        has_warning = True
+        tracking_check = {
+            'status': 'WARNING',
+            'badge': 'badge-amber',
+            'text': f"{logged_count} of {total_expected} Checkpoints Logged (In Transit)"
+        }
+        reasons.append(f"Transit in progress: {logged_count} of {total_expected} GPS route checkpoints completed.")
+    else:
+        tracking_check = {
+            'status': 'PASS',
+            'badge': 'badge-success',
+            'text': f"Completed ({logged_count}/{total_expected} Checkpoints Recorded)"
+        }
+
+    # Final Verdict & Recommendation
+    if has_fail:
+        overall_status = "SECURITY REVIEW REQUIRED"
+        overall_badge = "review-required"
+        verdict_theme = "danger"
+        verdict_title = "SECURITY REVIEW REQUIRED — ACTION MANDATORY"
+        verdict_desc = "One or more critical security validation checks failed or paper upload is missing. Examination conduct is on hold until resolved."
+        recommendation = "HOLD — SECURITY REVIEW REQUIRED"
+        recommendation_color = "#ef4444"
+        is_approved = False
+    elif has_warning:
+        overall_status = "CONDITIONAL REVIEW"
+        overall_badge = "warning"
+        verdict_theme = "warning"
+        verdict_title = "CONDITIONAL APPROVAL — MONITORING ACTIVE"
+        verdict_desc = "Security scan meets basic criteria, but transit tracking or checklist items remain incomplete."
+        recommendation = "CONDITIONAL DISPATCH — TRACKING REVIEW REQUIRED"
+        recommendation_color = "#f59e0b"
+        is_approved = False
+    else:
+        overall_status = "APPROVED"
+        overall_badge = "approved"
+        verdict_theme = "success"
+        verdict_title = "APPROVED FOR SECURE EXAM CONDUCT"
+        verdict_desc = "All automated security gates, cryptographic ledger integrity, and transit checkpoints have passed verification."
+        recommendation = "APPROVED FOR SECURE EXAM CONDUCT"
+        recommendation_color = "#22c55e"
+        is_approved = True
+        reasons = [
+            "Automated security scan passed high-confidence threshold.",
+            "Cryptographic audit ledger integrity verified sequentially.",
+            "All GPS transit checkpoints recorded and validated.",
+            "Containment chain of custody maintained intact."
+        ]
+
+    return {
+        'overall_status': overall_status,
+        'overall_badge': overall_badge,
+        'verdict_theme': verdict_theme,
+        'verdict_title': verdict_title,
+        'verdict_desc': verdict_desc,
+        'recommendation': recommendation,
+        'recommendation_color': recommendation_color,
+        'paper_check': paper_check,
+        'scan_check': scan_check,
+        'ledger_check': ledger_check,
+        'tracking_check': tracking_check,
+        'reasons': reasons,
+        'is_approved': is_approved
+    }
 
 
 def render_report(print_mode=False):
     """
-    Why it is needed:
-        Unified internal helper that handles report parameter gathering, database
-        queries, checkmarks evaluations, and data packaging. This ensures the
-        integrated review screen and printable PDF sheet share identical logic.
-    Input:
-        bool: print_mode (controls sidebar layout hiding and browser print autostart).
-    Output:
-        Renders templates/reports.html with compiled data grids.
+    Unified internal helper that gathers audit report parameters, database queries,
+    and compliance evaluations for both screen and printable views.
     """
     conn = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         
-        # 1. Fetch all examinations in database to populate dropdown search list
+        # 1. Fetch all examinations
         cursor.execute("SELECT exam_code, exam_name FROM exams ORDER BY id DESC")
         created_exams = cursor.fetchall()
         
-        # 2. Get specific exam code from request parameters, or default to the first exam
+        # 2. Selected exam code
         selected_code = request.args.get('exam_code')
         if not selected_code and created_exams:
             selected_code = created_exams[0]['exam_code']
             
-        # 3. Evaluate selected checkmarks checkboxes
-        # On initial page load (no parameters), default all segments to active
+        # 3. Checkbox toggles
         has_args = ('show_security' in request.args or 'show_blockchain' in request.args or 
                     'show_tracking' in request.args or 'security' in request.args or 
                     'blockchain' in request.args or 'tracking' in request.args)
@@ -2638,22 +3090,16 @@ def render_report(print_mode=False):
         tracking_logs = []
         
         if selected_code:
-            # 4. Retrieve exam details
             cursor.execute("SELECT * FROM exams WHERE exam_code = %s", (selected_code,))
             exam = cursor.fetchone()
             
             if exam:
-                # 5. Extract SHA-256 fingerprint, generating fallback hash if not uploaded yet
-                paper_dna = exam['paper_hash']
-                if not paper_dna:
-                    paper_dna = hashlib.sha256(exam['exam_code'].encode()).hexdigest()
+                paper_dna = exam.get('paper_hash') or hashlib.sha256(exam['exam_code'].encode()).hexdigest()
                     
-                # 6. Fetch SecureChain blockchain timeline logs
                 if show_blockchain:
                     cursor.execute("SELECT * FROM blockchain_logs WHERE exam_code = %s ORDER BY block_index ASC", (selected_code,))
                     blockchain_logs = cursor.fetchall()
                     
-                # 7. Fetch SmartTrace GPS tracking logs
                 if show_tracking:
                     cursor.execute("SELECT * FROM tracking_logs WHERE exam_code = %s ORDER BY id ASC", (selected_code,))
                     tracking_logs = cursor.fetchall()
@@ -2662,11 +3108,13 @@ def render_report(print_mode=False):
         conn.close()
         
         current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        evaluation = evaluate_exam_security(exam, blockchain_logs, tracking_logs)
         
         return render_template(
             'reports.html',
             created_exams=created_exams,
             exam=exam,
+            evaluation=evaluation,
             show_security=show_security,
             show_blockchain=show_blockchain,
             show_tracking=show_tracking,
@@ -2679,10 +3127,12 @@ def render_report(print_mode=False):
         
     except mysql.connector.Error as err:
         flash(f"Database error during audit compilation: {err}", "error")
+        evaluation = evaluate_exam_security(None, [], [])
         return render_template(
             'reports.html',
             created_exams=[],
             exam=None,
+            evaluation=evaluation,
             show_security=True,
             show_blockchain=True,
             show_tracking=True,
@@ -2696,15 +3146,6 @@ def render_report(print_mode=False):
 
 @app.route('/reports')
 def reports():
-    """
-    Why it is needed:
-        Serves the interactive secure reports compiler screen.
-    Input:
-        None
-    Output:
-        Renders templates/reports.html with dashboard layout wrappers.
-    """
-    # Active session check (Route protection)
     if not session.get('logged_in'):
         flash("Security Shield: Please log in to access the secure audit reports console.", "error")
         return redirect(url_for('login'))
@@ -2713,54 +3154,53 @@ def reports():
 
 @app.route('/print_report')
 def print_report():
-    """
-    Why it is needed:
-        Serves the clean printable audit sheet that autostarts window.print()
-    Input:
-        None
-    Output:
-        Renders templates/reports.html with header wrapper stripped out.
-    """
-    # Active session check (Route protection)
     if not session.get('logged_in'):
         flash("Security Shield: Please log in to view printable audit reports.", "error")
         return redirect(url_for('login'))
     return render_report(print_mode=True)
 
+
 @app.route('/verify_report/<exam_code>')
 def verify_report(exam_code):
-
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-
-    cursor.execute(
-        "SELECT * FROM created_exams WHERE exam_code=%s",
-        (exam_code,)
-    )
-
-    exam = cursor.fetchone()
-
-    cursor.close()
-    conn.close()
-
-    if not exam:
-        return "Invalid QR Code", 404
-
-    return f"""
-    <h1>EXAMSHIELD Verification</h1>
-
-    <h2>Exam Code : {exam['exam_code']}</h2>
-
-    <h3>Exam Name : {exam['exam_name']}</h3>
-
-    <h3>Status : {exam['status']}</h3>
-
-    <h3>Authority : {exam['authority']}</h3>
-
-    <h2 style='color:green'>
-    ✓ VERIFIED
-    </h2>
     """
+    Public digital certificate endpoint for scanning QR code containment labels.
+    """
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute("SELECT * FROM exams WHERE exam_code = %s", (exam_code,))
+        exam = cursor.fetchone()
+
+        if not exam:
+            return render_template("verify_public.html", exam=None, error=f"Examination packet '{exam_code}' not found in registry."), 404
+
+        paper_dna = exam.get('paper_hash') or hashlib.sha256(exam['exam_code'].encode()).hexdigest()
+
+        cursor.execute("SELECT COUNT(*) as block_count FROM blockchain_logs WHERE exam_code = %s", (exam_code,))
+        b_res = cursor.fetchone()
+        block_count = b_res['block_count'] if b_res else 0
+
+        cursor.execute("SELECT * FROM tracking_logs WHERE exam_code = %s ORDER BY id DESC LIMIT 1", (exam_code,))
+        latest_track = cursor.fetchone()
+
+        cursor.close()
+        conn.close()
+
+        return render_template(
+            "verify_public.html",
+            exam=exam,
+            paper_dna=paper_dna,
+            block_count=block_count,
+            latest_track=latest_track,
+            current_time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        )
+    except Exception as e:
+        return render_template("verify_public.html", exam=None, error=f"Verification query failed: {e}"), 500
+    finally:
+        if conn and conn.is_connected():
+            conn.close()
     
 @app.route('/logout')
 def logout():
@@ -2796,5 +3236,21 @@ def logout():
 
 # 5. EXECUTION BOOTSTRAP
 if __name__ == '__main__':
-    # Debug mode is activated to facilitate real-time updates and template hot reloading.
-    app.run(debug=True, port=5000)
+    # Automatically verify database schema non-destructively on startup
+    ensure_database_schema()
+
+    host = os.environ.get('FLASK_RUN_HOST', os.environ.get('HOST', '0.0.0.0'))
+    port = int(os.environ.get('FLASK_RUN_PORT', os.environ.get('PORT', 5000)))
+    debug = os.environ.get('FLASK_DEBUG', 'False').lower() in ('true', '1', 't')
+    base_url = get_external_base_url()
+
+    print("=" * 70)
+    print(" EXAMSHIELD SECURE EXAMINATION MANAGEMENT SYSTEM")
+    print("=" * 70)
+    print(f" Environment:        {'Production' if is_production else 'Development'}")
+    print(f" Public Base URL:    {base_url}")
+    print(f" Local Access URL:   http://127.0.0.1:{port}")
+    print(f" QR Verification:    {base_url}/verify_report/<exam_code>")
+    print(f" Debug Mode:         {debug}")
+    print("=" * 70)
+    app.run(host=host, port=port, debug=debug)

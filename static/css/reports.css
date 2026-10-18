@@ -442,6 +442,27 @@
 .summary-card.approved h3{
     color:#22c55e;
 }
+.summary-card.approved i{
+    color:#22c55e;
+}
+.summary-card.review-required h3{
+    color:#ef4444;
+}
+.summary-card.review-required i{
+    color:#ef4444;
+}
+.summary-card.warning h3{
+    color:#f59e0b;
+}
+.summary-card.warning i{
+    color:#f59e0b;
+}
+.summary-card.pending h3{
+    color:#38bdf8;
+}
+.summary-card.pending i{
+    color:#38bdf8;
+}
 .audit-verdict{
     display:flex;
     align-items:center;

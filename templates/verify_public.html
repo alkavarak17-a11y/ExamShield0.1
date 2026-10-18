@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ExamShield — Public Digital Verification Certificate</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #070d19 0%, #0d1726 50%, #0a1120 100%);
+            color: #f1f5f9;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 15px;
+        }
+        .cert-card {
+            background: rgba(17, 24, 39, 0.85);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 680px;
+            padding: 40px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(37, 99, 235, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+        .cert-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #2563eb, #38bdf8, #22c55e);
+        }
+        .header {
+            text-align: center;
+            padding-bottom: 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 25px;
+        }
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: #38bdf8;
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin-bottom: 6px;
+        }
+        .brand i {
+            color: #3b82f6;
+        }
+        .cert-subtitle {
+            font-size: 13px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+        .badge-verified {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(34, 197, 94, 0.15);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.35);
+            padding: 8px 18px;
+            border-radius: 9999px;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 15px 0 5px;
+        }
+        .badge-error {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            padding: 8px 18px;
+            border-radius: 9999px;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 15px 0 5px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+            margin-bottom: 25px;
+        }
+        @media (max-width: 580px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            .cert-card {
+                padding: 25px 20px;
+            }
+        }
+        .info-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 14px 16px;
+        }
+        .info-label {
+            font-size: 11px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+        .info-value {
+            font-size: 15px;
+            color: #f8fafc;
+            font-weight: 500;
+        }
+        .dna-box {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px dashed rgba(59, 130, 246, 0.35);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 25px;
+        }
+        .dna-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .dna-hash {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: #38bdf8;
+            word-break: break-all;
+            line-height: 1.6;
+        }
+        .status-pill {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .pill-verified {
+            background: rgba(34, 197, 94, 0.2);
+            color: #4ade80;
+        }
+        .pill-transit {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+        }
+        .footer-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 12px;
+            color: #64748b;
+        }
+        .portal-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .portal-btn:hover {
+            background: #1d4ed8;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+        }
+    </style>
+</head>
+<body>
+
+<div class="cert-card">
+    <div class="header">
+        <div class="brand">
+            <i class="fa-solid fa-shield-halved"></i>
+            <span>EXAMSHIELD</span>
+        </div>
+        <p class="cert-subtitle">Containment Label Digital Verification Certificate</p>
+        
+        {% if exam %}
+            <div class="badge-verified">
+                <i class="fa-solid fa-circle-check"></i>
+                Digitally Verified & Registered
+            </div>
+        {% else %}
+            <div class="badge-error">
+                <i class="fa-solid fa-circle-xmark"></i>
+                Verification Notice
+            </div>
+        {% endif %}
+    </div>
+
+    {% if exam %}
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Examination Code</div>
+                <div class="info-value"><b>{{ exam.exam_code }}</b></div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Examination Name</div>
+                <div class="info-value">{{ exam.exam_name }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Conducting Authority</div>
+                <div class="info-value">{{ exam.authority }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Jurisdiction / State</div>
+                <div class="info-value">{{ exam.state_ut }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Scheduled Time</div>
+                <div class="info-value">{{ exam.exam_date }} @ {{ exam.exam_time }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Current Dispatch Status</div>
+                <div class="info-value">
+                    {% if exam.status == "Verified" %}
+                        <span class="status-pill pill-verified">Delivered Securely</span>
+                    {% elif exam.status == "Arrived" %}
+                        <span class="status-pill pill-verified">Reached Center</span>
+                    {% else %}
+                        <span class="status-pill pill-transit">Vehicle In Transit</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="dna-box">
+            <div class="dna-header">
+                <span class="info-label"><i class="fa-solid fa-fingerprint"></i> Cryptographic Paper DNA (SHA-256)</span>
+                <span style="font-size: 11px; color: #22c55e;">Tamper Evident Seal Active</span>
+            </div>
+            <div class="dna-hash">{{ paper_dna }}</div>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Cryptographic Audit Blocks</div>
+                <div class="info-value"><i class="fa-solid fa-link" style="color: #3b82f6;"></i> {{ block_count }} Blocks Logged</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Latest GPS Checkpoint</div>
+                <div class="info-value">
+                    {% if latest_track %}
+                        <i class="fa-solid fa-location-dot" style="color: #22c55e;"></i> {{ latest_track.location_name }}
+                    {% else %}
+                        <span style="color: #94a3b8;">Pre-Transit Dispatch</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-actions">
+            <div>
+                Verified on: <b>{{ current_time }}</b><br>
+                ExamShield Security Verification Engine
+            </div>
+            <a href="/login" class="portal-btn">
+                <i class="fa-solid fa-arrow-right-to-bracket"></i> Officer Portal
+            </a>
+        </div>
+    {% else %}
+        <div style="text-align: center; padding: 30px 10px;">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size: 48px; color: #f59e0b; margin-bottom: 15px;"></i>
+            <h3 style="margin-bottom: 10px; color: #f8fafc;">Record Not Verified</h3>
+            <p style="color: #94a3b8; font-size: 14px; margin-bottom: 25px;">{{ error or "The requested examination code could not be verified in the ExamShield registry." }}</p>
+            <a href="/login" class="portal-btn" style="display: inline-flex;">
+                <i class="fa-solid fa-house"></i> Return to Login
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+</body>
+</html>

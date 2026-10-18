@@ -55,6 +55,9 @@
         <a href="/reports">
             <i class="fa-solid fa-chart-line"></i> Reports
         </a>
+        <a href="/qr">
+            <i class="fa-solid fa-qrcode"></i> QR Certificate
+        </a>
         <a href="/logout">
             <i class="fa-solid fa-right-from-bracket"></i> Logout
         </a>
@@ -110,19 +113,29 @@
         </h2>
 
 
-        <span>{{ transit_points|length }}/5 Checkpoints</span>
+        <span>
+            {% if transit_points %}
+                {{ transit_points|length }} / 5 Checkpoints Logged
+            {% else %}
+                0 Checkpoints Logged (Pre-Transit)
+            {% endif %}
+        </span>
     </div>
 
 
     <div class="progress-bar">
         <div class="progress-fill"
-             style="width: {{ (transit_points|length * 20) }}%;">
+             style="width: {{ progress_percent }}%;">
         </div>
     </div>
 
 
     <p class="progress-text">
-        {{ transit_points|length * 20 }}% Route Completed
+        {% if transit_points %}
+            {{ progress_percent }}% Route Completed &nbsp;•&nbsp; {{ estimated_remaining }}% Estimated Remaining
+        {% else %}
+            Pre-Transit Dispatch — Vehicle coordinates pending initial GPS synchronization
+        {% endif %}
     </p>
 
 
@@ -222,6 +235,14 @@
                     </div>
                    
                     <!-- Telemetry information container -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin: 15px 0 10px;">
+                        <span style="font-size: 12px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px;">
+                            <i class="fa-solid fa-microchip"></i> IoT Sensor Telemetry
+                        </span>
+                        <span style="font-size: 10px; background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); padding: 2px 7px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px;">
+                            Simulated Telemetry Feed
+                        </span>
+                    </div>
                     <div class="telemetry-grid">
                         <!-- Card 1: Container Lock Seal -->
                         <div class="telemetry-card">

@@ -52,6 +52,9 @@
         <a href="/reports">
             <i class="fa-solid fa-chart-line"></i> Reports
         </a>
+        <a href="/qr" class="active">
+            <i class="fa-solid fa-qrcode"></i> QR Certificate
+        </a>
         <a href="/logout">
             <i class="fa-solid fa-right-from-bracket"></i> Logout
         </a>
@@ -73,6 +76,20 @@
     <!-- Main Content Area -->
     <div class="main-content">
        
+        <!-- Flash alerts for validation/security feedback -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, msg in messages %}
+                        <div class="alert-box {{ category }}">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <span>{{ msg }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+       
         <!-- Search and Selection Panel -->
         <section class="search-card">
             <form action="/qr" method="GET" class="search-form">
@@ -80,7 +97,7 @@
                 <select name="exam_code" id="exam_code_select" onchange="this.form.submit()">
                     <option value="">-- Choose created exam --</option>
                     {% for ex in created_exams %}
-                        <option value="{{ ex.exam_code }}" {% if ex.exam_code == exam.exam_code %}selected{% endif %}>
+                        <option value="{{ ex.exam_code }}" {% if exam and ex.exam_code == exam.exam_code %}selected{% endif %}>
                             {{ ex.exam_code }} - {{ ex.exam_name }}
                         </option>
                     {% endfor %}
@@ -101,25 +118,54 @@
 
 
                    
-                    <div class="verification-status-card">
-
-
-                    <div class="verify-icon">
-                        <i class="fa-solid fa-circle-check"></i>
+                    <!-- Dynamic Verification Status Card -->
+                    <div class="verification-status-card {{ qr_status|lower }}">
+                    {% if qr_status == 'Verified' %}
+                        <div class="verify-icon">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+                        <div class="verify-text">
+                            <h3>Digital Certificate Verified</h3>
+                            <p>
+                                Security Engine ✓ &nbsp;&nbsp;
+                                Blockchain ✓ &nbsp;&nbsp;
+                                Tracking ✓
+                            </p>
+                        </div>
+                    {% elif qr_status == 'Expired' %}
+                        <div class="verify-icon">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                        <div class="verify-text">
+                            <h3>Digital Certificate Expired</h3>
+                            <p>Examination schedule has concluded or expired.</p>
+                        </div>
+                    {% elif qr_status == 'Invalid' %}
+                        <div class="verify-icon">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                        </div>
+                        <div class="verify-text">
+                            <h3>Invalid Certificate / Unregistered</h3>
+                            <p>Cryptographic fingerprint could not be authenticated.</p>
+                        </div>
+                    {% elif qr_status == 'Error' %}
+                        <div class="verify-icon">
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                        </div>
+                        <div class="verify-text">
+                            <h3>Verification Error</h3>
+                            <p>System encountered an error resolving security parameters.</p>
+                        </div>
+                    {% else %}
+                        <div class="verify-icon">
+                            <i class="fa-solid fa-clock"></i>
+                        </div>
+                        <div class="verify-text">
+                            <h3>Verification Pending</h3>
+                            <p>Cryptographic paper DNA upload or validation in progress.</p>
+                        </div>
+                    {% endif %}
                     </div>
-
-
-                    <div class="verify-text">
-                        <h3>Digital Certificate Verified</h3>
-                        <p>
-                            Security Engine ✓ &nbsp;&nbsp;
-                            Blockchain ✓ &nbsp;&nbsp;
-                            Tracking ✓
-                        </p>
-                    </div>
-
-
-                </div>
 
 
                     <!-- Target container for the generated QR Code -->
@@ -133,6 +179,14 @@
                     <i class="fa-solid fa-circle-info"></i>
                     Scan this QR code to open the live SmartTrace tracking portal.
                 </p>
+                {% if verification_url %}
+                <div class="qr-target-badge">
+                    <span class="qr-target-label"><i class="fa-solid fa-mobile-screen-button"></i> Mobile Scan Target:</span>
+                    <a href="{{ verification_url }}" target="_blank" class="qr-target-link" id="verificationUrlLink" rel="noopener noreferrer">
+                        {{ verification_url }}
+                    </a>
+                </div>
+                {% endif %}
                     <!-- Exam details metadata -->
                     <table class="qr-details-table">
                         <tr>
@@ -255,11 +309,16 @@
 
             </div>
         {% else %}
-            <!-- Warning display if no exam is selected -->
+            <!-- Warning display if no exam is selected or exam not found -->
             <div class="map-panel" style="margin-top: 20px; text-align: center; padding: 50px;">
                 <i class="fa-solid fa-circle-question" style="font-size: 48px; color: #3b82f6; margin-bottom: 20px;"></i>
-                <h2>No Examinations Created</h2>
-                <p style="color:#94a3b8; font-size:14px;">Please create an examination in the database to generate secure labels.</p>
+                {% if qr_status == 'Invalid' %}
+                    <h2>Examination Not Found in Registry</h2>
+                    <p style="color:#94a3b8; font-size:14px;">The specified examination code could not be verified against the secure database.</p>
+                {% else %}
+                    <h2>No Examinations Created</h2>
+                    <p style="color:#94a3b8; font-size:14px;">Please create an examination in the database to generate secure labels.</p>
+                {% endif %}
             </div>
         {% endif %}
 
@@ -267,22 +326,30 @@
     </div>
 
 
-    <!-- CDNs for qrcode.js library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- Local and CDN fallback for qrcode.js library -->
+    <script src="{{ url_for('static', filename='js/qrcode.min.js') }}"></script>
+    <script>
+        if (typeof QRCode === 'undefined') {
+            document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>');
+        }
+    </script>
 
-
-    {% if exam %}
-        <!-- Injects payload text for QR scan (resolves to the tracking route for the exam) -->
+    {% if exam and verification_url %}
+        <!-- Injects validated absolute verification URL for QR generator -->
         <script>
-            const EXAM_QR_PAYLOAD = window.location.origin + "/tracking?exam_code={{ exam.exam_code }}";
+            const EXAM_QR_PAYLOAD = {{ verification_url|tojson }};
+        </script>
+    {% else %}
+        <script>
+            const EXAM_QR_PAYLOAD = "";
         </script>
     {% endif %}
 
 
     <!-- Link to QR generator controller script -->
-     <input type="hidden" id="examCode" value="{{ exam.exam_code }}">
-<input type="hidden" id="examAuthority" value="{{ exam.authority }}">
-<input type="hidden" id="examStatus" value="{{ exam.status }}">
+     <input type="hidden" id="examCode" value="{{ exam.exam_code if exam else '' }}">
+     <input type="hidden" id="examAuthority" value="{{ exam.authority if exam else '' }}">
+     <input type="hidden" id="examStatus" value="{{ exam.status if exam else '' }}">
     <script src="{{ url_for('static', filename='js/qr.js') }}"></script>
 
 

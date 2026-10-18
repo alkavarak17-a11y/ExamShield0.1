@@ -9,10 +9,11 @@ CREATE DATABASE IF NOT EXISTS examshield;
 USE examshield;
 
 -- 2. Create the 'users' table to hold credential information
-DROP TABLE IF EXISTS remember_tokens;
-DROP TABLE IF EXISTS otp;
-DROP TABLE IF EXISTS officers;
-DROP TABLE IF EXISTS users;
+-- (Note: Avoid DROP TABLE in production to preserve user accounts and logs across deployments)
+-- DROP TABLE IF EXISTS remember_tokens;
+-- DROP TABLE IF EXISTS otp;
+-- DROP TABLE IF EXISTS officers;
+-- DROP TABLE IF EXISTS users;
 
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -30,7 +31,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS otp (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
-    otp_hash VARCHAR(6) NOT NULL,
+    otp_hash VARCHAR(64) NOT NULL,
     created_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     expiry_time TIMESTAMP NOT NULL,
     attempts INT DEFAULT 0,
@@ -166,10 +167,25 @@ CREATE TABLE IF NOT EXISTS centers (
     integrity_score INT DEFAULT 100,
     
     -- 'status': Connection and status flag (e.g. 'Online', 'Offline', 'Compromised').
-    status VARCHAR(50) DEFAULT 'Online'
+    status VARCHAR(50) DEFAULT 'Online',
+    
+    -- 'exam_code': Links center to an active examination.
+    exam_code VARCHAR(50) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 6. Create the 'blockchain_logs' table to log SecureChain ledger entries
+-- 6. Create the 'notifications' table to store user system notifications
+CREATE TABLE IF NOT EXISTS notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    title VARCHAR(100) NOT NULL,
+    message VARCHAR(255) NOT NULL,
+    notification_type VARCHAR(50) DEFAULT 'system',
+    is_read TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 7. Create the 'blockchain_logs' table to log SecureChain ledger entries
 CREATE TABLE IF NOT EXISTS blockchain_logs (
     -- 'id': Uniquely identifies each block log.
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -265,5 +281,11 @@ VALUES
 ('EXM-2026-002', 'Destination Center', 'Thane Public School Center 3', 19.21830000, 72.97810000, 'officer@examshield.gov.in'),
 
 ('EXM-2026-004', 'Vault Dispatch', 'Delhi Central Security Vault', 28.70410000, 77.10250000, 'officer@examshield.gov.in'),
-('EXM-2026-004', 'Center Receipt - Verified', 'Delhi National Trust Academy (Exam Center)', 28.63040000, 77.21770000, 'officer@examshield.gov.in')
+('EXM-2026-004', 'Center Receipt - Verified', 'Delhi National Trust Academy (Exam Center)', 28.63040000, 77.21770000, 'officer@examshield.gov.in'),
+
+('EXM-2026-001', 'Vault Dispatch', 'Delhi Central Security Vault', 28.70410000, 77.10250000, 'officer@examshield.gov.in'),
+('EXM-2026-001', 'In Transit Stopover', 'Ring Road Security Outpost 4', 28.67000000, 77.15000000, 'officer@examshield.gov.in'),
+('EXM-2026-001', 'In Transit Stopover', 'ITO Security Check Gate', 28.63000000, 77.24000000, 'officer@examshield.gov.in'),
+('EXM-2026-001', 'In Transit Stopover', 'Connaught Place Security Corridor', 28.63150000, 77.21670000, 'officer@examshield.gov.in'),
+('EXM-2026-001', 'Center Receipt - Verified', 'Delhi National Trust Academy (Exam Center)', 28.63040000, 77.21770000, 'officer@examshield.gov.in')
 ON DUPLICATE KEY UPDATE location_name=VALUES(location_name);

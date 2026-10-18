@@ -63,6 +63,9 @@
         <a href="/reports">
             <i class="fa-solid fa-chart-line"></i> Reports
         </a>
+        <a href="/qr">
+            <i class="fa-solid fa-qrcode"></i> QR Certificate
+        </a>
         <a href="/logout">
             <i class="fa-solid fa-right-from-bracket"></i> Logout
         </a>
@@ -312,24 +315,22 @@ function loadNotifications(){
         });
 
     })
-
     .catch(err=>{
         console.log(err);
     });
+}
 
-    window.onload=function(){
-
+document.addEventListener("DOMContentLoaded", function() {
     fetch("/notifications")
-    .then(res=>res.json())
-    .then(data=>{
-
-        document.getElementById("notification-count").innerText=data.count;
-
-    });
-
-}
-
-}
+    .then(res => res.json())
+    .then(data => {
+        const countBadge = document.getElementById("notification-count");
+        if (countBadge) {
+            countBadge.innerText = data.count || 0;
+        }
+    })
+    .catch(err => console.log(err));
+});
     
 
 

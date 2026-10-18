@@ -24,12 +24,12 @@
 
         <!-- Security information badge -->
         <p class="encrypt">
-            🔒 Government of India Secure Access Portal
+            🛡️ ExamShield Secure Examination Portal
         </p>
 
         <!-- Encryption message -->
         <p>
-            AES-256 Encrypted Connection
+            Session Security & Two-Factor Authentication
         </p>
 
         <!-- Flash messages for error / success feedback -->
@@ -54,12 +54,12 @@
         <!-- Data will be sent to Flask /login route -->
         <form action="/login" method="POST">
 
-            <!-- Government ID input -->
-            <label>GOVERNMENT ID</label>
+            <!-- Officer ID input -->
+            <label>OFFICER ID / EMAIL</label>
             <input 
                 type="text" 
                 name="government_id" 
-                placeholder="Officer.id@gov.in" 
+                placeholder="officer@examshield.gov.in" 
                 required
             >
 
@@ -102,65 +102,16 @@
                 <hr>
             </div>
 
-
             <!-- Biometric Login -->
-            <input 
-                type="hidden" 
-                id="bio-government-id"
-            >
-
-
             <button 
                 type="button" 
-                class="bio-btn"
-                onclick="biometricLogin()">
-
+                class="bio-btn">
                 <i class="fa-solid fa-fingerprint"></i>
                 Biometric Login
-
             </button>
-        <!-- ===== LOGIN FORM END ===== -->
-            </form>
+        </form>
     </div>
 
-    <!-- ===== LOGIN CARD END ===== -->
-<script>
-
-function biometricLogin(){
-
-    let govId = document.querySelector(
-        "input[name='government_id']"
-    ).value;
-
-
-    if(govId.trim() === ""){
-        alert("Please enter Government ID first.");
-        return;
-    }
-
-
-    let form = document.createElement("form");
-
-    form.method = "POST";
-    form.action = "/biometric-login";
-
-
-    let input = document.createElement("input");
-
-    input.type = "hidden";
-    input.name = "government_id";
-    input.value = govId;
-
-
-    form.appendChild(input);
-
-    document.body.appendChild(form);
-
-    form.submit();
-
-}
-
-</script>
     <!-- Link to external JavaScript file -->
     <script src="{{ url_for('static', filename='js/login.js') }}"></script>
 </body>
